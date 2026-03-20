@@ -34,6 +34,14 @@
     }
     header p { color:var(--dim); font-size:.9rem; margin-top:.4rem; }
 
+    .btn-home {
+      display: inline-block; position: absolute; left: 1rem; top: 2rem;
+      padding: .4rem .8rem; border-radius: 8px; font-size: .8rem; font-weight: 700;
+      color: var(--cyan); text-decoration: none; border: 1px solid rgba(0,212,255,.3);
+      transition: all .2s;
+    }
+    .btn-home:hover { background: rgba(0,212,255,.1); }
+
     /* ── Round / Attempt indicator ── */
     .meta {
       display:flex; gap:1.5rem; margin:.8rem 0;
@@ -167,6 +175,7 @@
 </div>
 
 <header>
+  <a href="index.html" class="btn-home">← 홈으로</a>
   <h1>🎨 색 맞추기</h1>
   <p>왼쪽 색과 최대한 가까운 색을 오른쪽에서 클릭해서 고르세요! 기회는 2번.</p>
 </header>

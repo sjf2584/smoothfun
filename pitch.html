@@ -34,6 +34,14 @@
     }
     header p { color:var(--dim); font-size:.9rem; margin-top:.4rem; }
 
+    .btn-home {
+      display: inline-block; position: absolute; left: 1rem; top: 2rem;
+      padding: .4rem .8rem; border-radius: 8px; font-size: .8rem; font-weight: 700;
+      color: var(--cyan); text-decoration: none; border: 1px solid rgba(0,212,255,.3);
+      transition: all .2s;
+    }
+    .btn-home:hover { background: rgba(0,212,255,.1); }
+
     /* ── Controls ── */
     .controls {
       display:flex; flex-direction:column; gap:.7rem;
@@ -201,6 +209,7 @@
 </div>
 
 <header>
+  <a href="index.html" class="btn-home">← 홈으로</a>
   <h1>🎵 절대음감 테스트</h1>
   <p>재생 버튼을 누른 후 들은 음을 건반에서 맞춰보세요!</p>
 </header>

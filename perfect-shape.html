@@ -57,6 +57,13 @@
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
+    .btn-home {
+      display: inline-block; position: absolute; left: 1rem; top: 2rem;
+      padding: .4rem .8rem; border-radius: 8px; font-size: .8rem; font-weight: 700;
+      color: var(--cyan); text-decoration: none; border: 1px solid rgba(0,212,255,.3);
+      transition: all .2s;
+    }
+    .btn-home:hover { background: rgba(0,212,255,.1); }
 
     header p {
       color: var(--dim);
@@ -268,6 +275,7 @@
 </div>
 
 <header>
+  <a href="index.html" class="btn-home">← 홈으로</a>
   <h1>✏️ 완벽한 도형 그리기</h1>
   <p>마우스나 손가락으로 최대한 완벽한 도형을 그려보세요!</p>
 </header>
