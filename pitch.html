@@ -191,10 +191,42 @@
     .ad-left  { left:8px; }
     .ad-right { right:8px; }
     @media (max-width:1300px) { .ad-sidebar { display:none; } }
+    /* ── Leaderboard ── */
+    .lb-section {
+      width:min(600px, 100% - 2rem); margin: 3rem auto 2rem;
+      background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08);
+      border-radius:16px; padding:1.5rem; position:relative; z-index:1;
+    }
+    .lb-warning {
+      background:rgba(255,68,68,.1); border:1px solid rgba(255,68,68,.3);
+      color:#ffaaaa; font-size:.75rem; padding:.8rem; border-radius:8px;
+      margin-bottom:1.5rem; line-height:1.4; text-align:center; word-break:keep-all;
+    }
+    .lb-header { text-align:center; margin-bottom:1rem; }
+    .lb-header h2 { font-size:1.4rem; color:var(--gold); display:flex; align-items:center; justify-content:center; gap:.5rem; }
+    .lb-tabs { display:flex; gap:.4rem; justify-content:center; margin-bottom:1rem; flex-wrap:wrap; }
+    .lb-tab {
+      background:transparent; border:1px solid rgba(255,255,255,.2); color:var(--dim);
+      padding:.3rem .8rem; border-radius:20px; font-size:.75rem; cursor:pointer; font-family:inherit; transition:all .2s;
+    }
+    .lb-tab.active { background:var(--gold); color:#000; border-color:var(--gold); font-weight:800; }
+    .lb-list { display:flex; flex-direction:column; gap:.4rem; min-height:150px; }
+    .lb-item {
+      display:flex; align-items:center; background:rgba(0,0,0,.3); padding:.6rem 1rem;
+      border-radius:10px; font-size:.9rem;
+    }
+    .lb-item.empty { justify-content:center; color:var(--dim); font-size:.8rem; font-style:italic; }
+    .lb-rank { width:24px; font-weight:900; color:var(--dim); }
+    .lb-item:nth-child(1) .lb-rank { color:var(--gold); }
+    .lb-item:nth-child(2) .lb-rank { color:#c0c0c0; }
+    .lb-item:nth-child(3) .lb-rank { color:#cd7f32; }
+    .lb-name { flex:1; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:1rem; }
+    .lb-score { font-family:monospace; font-size:.95rem; color:var(--cyan); font-weight:700; }
   </style>
   <!-- Google AdSense: pub-1363977997493751 로 교체 후 주석 해제 -->
   <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=pub-1363977997493751" crossorigin="anonymous"></script> -->
   <script src="security.js"></script>
+  <script type="module" src="db.js"></script>
 </head>
 <body>
 <div class="ad-sidebar ad-left">
@@ -249,7 +281,18 @@
 <!-- Result -->
 <div class="result-zone" id="resultZone"></div>
 
-
+<div class="lb-section">
+  <div class="lb-warning">⚠️ <b>정정당당한 승부!</b><br>클라이언트 변조를 통한 비정상적인 스코어 조작은 스트리머와 시청자 모두의 재미를 반감시킵니다. 양심적인 플레이를 부탁드립니다.</div>
+  <div class="lb-header"><h2>🏆 오늘의 TOP 10</h2></div>
+  <div class="lb-tabs" id="lbTabs">
+    <button class="lb-tab active" data-cat="note_1">1음</button>
+    <button class="lb-tab" data-cat="note_2">2음</button>
+    <button class="lb-tab" data-cat="note_3">3음</button>
+    <button class="lb-tab" data-cat="note_4">4음</button>
+    <button class="lb-tab" data-cat="note_5">5음</button>
+  </div>
+  <div class="lb-list" id="lbList"><div class="lb-item empty">랭킹 불러오는 중...</div></div>
+</div>
 
 <script>
 // ── Note data ────────────────────────────
@@ -537,6 +580,20 @@ function showResult(score, correct) {
         <button class="btn-p" onclick="newGame()">🔄 다시 하기</button>
       </div>
     </div>`;
+
+  // Save to DB
+  const cat = `note_${noteCount}`;
+  setTimeout(async () => {
+    if (!window.dbAPI) return;
+    const isTop = await window.dbAPI.isTop10('pitch', cat, score, 'desc');
+    if (isTop) {
+      const name = prompt("🎉 오늘의 TOP 10 달성! 닉네임을 입력하세요 (최대 10자):", "");
+      if (name && name.trim()) {
+         await window.dbAPI.saveScore('pitch', cat, name.trim().slice(0,10), score, `${score}% (${correct}/${noteCount})`);
+         if (currentLbCat === cat) loadLeaderboard(cat);
+      }
+    }
+  }, 500);
 }
 
 function rating(sc) {
@@ -570,6 +627,30 @@ document.getElementById('modeRow').addEventListener('click', e => {
 // ── Init ─────────────────────────────────
 buildKeyboard();
 newGame();
+
+// ── Leaderboard Logic ─────────────────────
+let currentLbCat = `note_1`;
+function loadLeaderboard(cat = currentLbCat) {
+  currentLbCat = cat;
+  document.querySelectorAll('.lb-tab').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+  const list = document.getElementById('lbList');
+  list.innerHTML = '<div class="lb-item empty">데이터를 불러오는 중...</div>';
+  
+  if (!window.dbAPI) { setTimeout(() => loadLeaderboard(cat), 100); return; }
+  window.dbAPI.getTop10('pitch', cat, 'desc').then(data => {
+    if (!data || data.length === 0) { list.innerHTML = '<div class="lb-item empty">아직 기록이 없습니다. 첫 랭커가 되어보세요!</div>'; return; }
+    list.innerHTML = data.map((d, i) => `
+      <div class="lb-item">
+        <span class="lb-rank">${i+1}</span>
+        <span class="lb-name">${d.name}</span>
+        <span class="lb-score">${d.extraText}</span>
+      </div>`).join('');
+  });
+}
+document.getElementById('lbTabs').addEventListener('click', e => {
+  if(e.target.classList.contains('lb-tab')) loadLeaderboard(e.target.dataset.cat);
+});
+loadLeaderboard();
 </script>
 </body>
 </html>
