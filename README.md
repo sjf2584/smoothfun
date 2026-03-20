@@ -1,4 +1,4 @@
-# 도파민 게임 (Dopamine Games)
+# 스무스펀 (Smoothfun)
 
 스트리머와 시청자가 함께 즐길 수 있는 빠르고 간단한 감각 테스트 미니게임 모음 웹사이트입니다.
 
@@ -25,4 +25,4 @@
 3. 광고 단위 ID(`data-ad-slot`)를 교체하면 즉시 광고 수익 창출이 가능합니다.
 
 ---
-*© 2026 도파민 게임. All Rights Reserved.*
+*© 2026 스무스펀. All Rights Reserved.*
