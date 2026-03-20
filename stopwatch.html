@@ -12,6 +12,18 @@
       --gold:#ffd700; --text:#e8e8ff; --dim:#6060a0;
       --green:#00ff88; --red:#ff4444;
     }
+    :root[data-theme="light"] {
+      --bg:#f0f2ff; --surface:#ffffff; --surface2:#e8eaff;
+      --accent:#5b2de0; --cyan:#0099cc; --pink:#cc2299;
+      --gold:#b8860b; --text:#1a1a3a; --dim:#8080b0;
+      --green:#00aa55; --red:#cc2222;
+    }
+    :root[data-theme="light"] body::before { background:none; }
+    :root[data-theme="light"] .timer-wrap {
+      background:#fff; border-color:rgba(91,45,224,.4);
+      box-shadow:0 0 30px rgba(91,45,224,.1);
+    }
+    :root[data-theme="light"] .opt-btn { background:#f0f2ff; border-color:rgba(0,0,0,.15); }
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
       font-family:'Outfit','Noto Sans KR',sans-serif;
@@ -171,6 +183,7 @@
   <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=pub-1363977997493751" crossorigin="anonymous"></script> -->
   <script src="security.js"></script>
   <script type="module" src="db.js"></script>
+  <script src="theme.js"></script>
 </head>
 <body>
 

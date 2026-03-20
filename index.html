@@ -12,6 +12,23 @@
       --accent:#6c3aff; --cyan:#00d4ff; --pink:#ff3aac;
       --gold:#ffd700; --text:#e8e8ff; --dim:#6060a0;
     }
+    :root[data-theme="light"] {
+      --bg:#f0f2ff; --surface:#ffffff; --surface2:#e8eaff;
+      --accent:#5b2de0; --cyan:#0099cc; --pink:#cc2299;
+      --gold:#b8860b; --text:#1a1a3a; --dim:#8080b0;
+    }
+    :root[data-theme="light"] body::before {
+      background:
+        radial-gradient(ellipse at 20% 15%, rgba(108,58,255,.08) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 80%, rgba(0,153,204,.06) 0%, transparent 55%);
+    }
+    :root[data-theme="light"] .game-card {
+      background:rgba(255,255,255,.85);
+      border-color:rgba(0,0,0,.1);
+    }
+    :root[data-theme="light"] .game-card:hover {
+      border-color:rgba(91,45,224,.4);
+    }
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
       font-family:'Outfit','Noto Sans KR',sans-serif;
@@ -147,6 +164,7 @@
   <!-- Google AdSense: pub-1363977997493751 로 교체 후 주석 해제 -->
   <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=pub-1363977997493751" crossorigin="anonymous"></script> -->
   <script src="security.js"></script>
+  <script src="theme.js"></script>
 </head>
 <body>
 

@@ -11,6 +11,15 @@
       --accent: #6c3aff; --cyan: #00d4ff; --pink: #ff3aac;
       --gold: #ffd700; --text: #e8e8ff; --dim: #6060a0;
     }
+    :root[data-theme="light"] {
+      --bg:#f0f2ff; --surface:#ffffff; --surface2:#e8eaff;
+      --accent:#5b2de0; --cyan:#0099cc; --pink:#cc2299;
+      --gold:#b8860b; --text:#1a1a3a; --dim:#8080b0;
+    }
+    :root[data-theme="light"] body::before { background:none; }
+    :root[data-theme="light"] .target-sq { border-color:rgba(0,0,0,.15); }
+    :root[data-theme="light"] .attempt-card { background:#f5f5ff; border-color:rgba(0,0,0,.08); }
+    :root[data-theme="light"] .attempt-empty { background:#f5f5ff; border-color:rgba(0,0,0,.08); }
     * { margin:0; padding:0; box-sizing:border-box; }
 
     body {
@@ -193,6 +202,7 @@
   <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=pub-1363977997493751" crossorigin="anonymous"></script> -->
   <script src="security.js"></script>
   <script type="module" src="db.js"></script>
+  <script src="theme.js"></script>
 </head>
 <body>
 <div class="ad-sidebar ad-left">
