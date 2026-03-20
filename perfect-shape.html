@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>완벽한 도형 그리기 | 도파민 게임</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080816;
+      --surface: #0f0f28;
+      --surface2: #181840;
+      --accent: #6c3aff;
+      --cyan: #00d4ff;
+      --pink: #ff3aac;
+      --gold: #ffd700;
+      --text: #e8e8ff;
+      --dim: #6060a0;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Outfit', 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 10%, rgba(108,58,255,.1) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 90%, rgba(0,212,255,.07) 0%, transparent 55%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      text-align: center;
+      padding: 2rem 1rem 0.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    header h1 {
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--cyan), var(--accent), var(--pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header p {
+      color: var(--dim);
+      font-size: .9rem;
+      margin-top: .4rem;
+    }
+
+    /* ── Shape Selector ── */
+    .shape-selector {
+      display: flex;
+      gap: .6rem;
+      margin: 1.2rem 0 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 0 1rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .shape-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .25rem;
+      padding: .7rem .9rem;
+      background: var(--surface);
+      border: 1.5px solid rgba(108,58,255,.25);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all .2s;
+      min-width: 72px;
+      color: var(--dim);
+      font-family: inherit;
+    }
+
+    .shape-btn:hover { border-color: var(--accent); color: var(--text); transform: translateY(-2px); }
+    .shape-btn.active {
+      background: linear-gradient(135deg, rgba(108,58,255,.25), rgba(0,212,255,.12));
+      border-color: var(--cyan);
+      color: var(--cyan);
+      box-shadow: 0 0 18px rgba(0,212,255,.3);
+    }
+
+    .s-icon { font-size: 1.9rem; line-height: 1; }
+    .s-name { font-size: .7rem; font-weight: 700; }
+    .s-best { font-size: .65rem; color: var(--gold); min-height: .9rem; }
+
+    /* ── Canvas ── */
+    .canvas-wrap {
+      position: relative;
+      z-index: 1;
+    }
+
+    #c {
+      display: block;
+      border: 2px solid rgba(108,58,255,.3);
+      border-radius: 18px;
+      background: var(--surface);
+      cursor: crosshair;
+      touch-action: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    #c.on {
+      border-color: var(--cyan);
+      box-shadow: 0 0 22px rgba(0,212,255,.35);
+    }
+
+    .hint {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+      transition: opacity .25s;
+    }
+
+    .hint-icon { font-size: 3.5rem; display: block; margin-bottom: .4rem; opacity: .4; }
+    .hint p { color: var(--dim); font-size: .9rem; }
+
+    /* ── Score ── */
+    .score-zone {
+      min-height: 130px;
+      text-align: center;
+      padding: .8rem 1rem 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .score-box { display: none; }
+    .score-box.show { display: block; animation: fadeUp .4s ease; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .score-num {
+      font-size: clamp(3.5rem, 11vw, 6.5rem);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -2px;
+    }
+
+    .rating {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-top: .2rem;
+      letter-spacing: 1px;
+    }
+
+    .breakdown {
+      display: flex;
+      gap: .6rem;
+      justify-content: center;
+      margin-top: .7rem;
+      flex-wrap: wrap;
+    }
+
+    .bd-item {
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 8px;
+      padding: .3rem .7rem;
+      font-size: .78rem;
+    }
+    .bd-item b { color: var(--cyan); }
+
+    .new-best {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--gold), #ff9500);
+      color: #000;
+      font-size: .75rem;
+      font-weight: 900;
+      padding: .15rem .6rem;
+      border-radius: 20px;
+      margin-left: .4rem;
+      animation: pop .4s ease;
+    }
+    @keyframes pop { 0%{transform:scale(.5)}70%{transform:scale(1.2)}100%{transform:scale(1)} }
+
+    /* score colors */
+    .s  { color: var(--gold); }
+    .a  { color: #00ff88; }
+    .b  { color: var(--cyan); }
+    .cc { color: #ff9500; }
+    .d  { color: #ff4444; }
+
+    /* ── Buttons ── */
+    .btns {
+      display: none;
+      gap: .7rem;
+      justify-content: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+
+    .btn {
+      padding: .75rem 1.7rem;
+      border: none;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: .95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .btn-p {
+      background: linear-gradient(135deg, var(--accent), var(--pink));
+      color: #fff;
+    }
+    .btn-p:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(108,58,255,.4); }
+
+    .btn-s {
+      background: var(--surface);
+      color: var(--text);
+      border: 1.5px solid rgba(255,255,255,.1);
+    }
+    .btn-s:hover { border-color: var(--accent); }
+
+    /* AdSense 사이드바 */
+    .ad-sidebar {
+      position: fixed; top: 50%; transform: translateY(-50%);
+      width: 160px; z-index: 10;
+    }
+    .ad-left  { left: 8px; }
+    .ad-right { right: 8px; }
+    @media (max-width: 1300px) { .ad-sidebar { display: none; } }
+  </style>
+  <!-- Google AdSense: pub-1363977997493751 로 교체 후 주석 해제 -->
+  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=pub-1363977997493751" crossorigin="anonymous"></script> -->
+  <script src="security.js"></script>
+</head>
+<body>
+<!-- AdSense 좌측 -->
+<div class="ad-sidebar ad-left">
+  <ins class="adsbygoogle" style="display:block;width:160px;height:600px"
+    data-ad-client="pub-1363977997493751" data-ad-slot="XXXXXXXXXX"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+<!-- AdSense 우측 -->
+<div class="ad-sidebar ad-right">
+  <ins class="adsbygoogle" style="display:block;width:160px;height:600px"
+    data-ad-client="pub-1363977997493751" data-ad-slot="XXXXXXXXXX"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+
+<header>
+  <h1>✏️ 완벽한 도형 그리기</h1>
+  <p>마우스나 손가락으로 최대한 완벽한 도형을 그려보세요!</p>
+</header>
+
+<div class="shape-selector" id="sel"></div>
+
+<div class="canvas-wrap">
+  <canvas id="c"></canvas>
+  <div class="hint" id="hint">
+    <span class="hint-icon" id="hintIcon">○</span>
+    <p>여기에 그리세요</p>
+  </div>
+</div>
+
+<div class="score-zone">
+  <div class="score-box" id="scoreBox">
+    <div class="score-num" id="scoreNum">0%</div>
+    <div class="rating" id="rating"></div>
+    <div class="breakdown" id="breakdown"></div>
+  </div>
+</div>
+
+<div class="btns" id="btns">
+  <button class="btn btn-p" onclick="resetAll()">🔄 다시 그리기</button>
+  <button class="btn btn-s" onclick="share()">📋 공유하기</button>
+</div>
+
+
+
+<!-- Google AdSense (실제 publisher-id로 교체 필요) -->
+<!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
+
+<script>
+// ── Config ──────────────────────────────
+const SHAPES = [
+  { id:'circle',   name:'원',      icon:'○', sides:0 },
+  { id:'square',   name:'정사각형', icon:'□', sides:4 },
+  { id:'triangle', name:'정삼각형', icon:'△', sides:3 },
+  { id:'pentagon', name:'정오각형', icon:'⬠', sides:5 },
+  { id:'hexagon',  name:'정육각형', icon:'⬡', sides:6 },
+];
+
+// ── State ────────────────────────────────
+let cur = 'circle';
+let drawing = false;
+let pts = [];
+let bests = JSON.parse(localStorage.getItem('ps_best') || '{}');
+let lastScore = 0;
+let lastRating = '';
+
+// ── Elements ─────────────────────────────
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+const hintEl = document.getElementById('hint');
+const hintIcon = document.getElementById('hintIcon');
+const selEl  = document.getElementById('sel');
+const scoreBox = document.getElementById('scoreBox');
+const scoreNum = document.getElementById('scoreNum');
+const ratingEl = document.getElementById('rating');
+const bdEl   = document.getElementById('breakdown');
+const btnsEl = document.getElementById('btns');
+
+// ── Build Shape Selector ──────────────────
+SHAPES.forEach(s => {
+  const btn = document.createElement('button');
+  btn.className = 'shape-btn' + (s.id === cur ? ' active' : '');
+  btn.dataset.id = s.id;
+  btn.innerHTML = `
+    <span class="s-icon">${s.icon}</span>
+    <span class="s-name">${s.name}</span>
+    <span class="s-best" id="best-${s.id}">${bestLabel(s.id)}</span>`;
+  btn.addEventListener('click', () => selectShape(s.id));
+  selEl.appendChild(btn);
+});
+
+function bestLabel(id) {
+  return bests[id] !== undefined ? `최고: ${bests[id]}%` : '-';
+}
+
+function selectShape(id) {
+  cur = id;
+  document.querySelectorAll('.shape-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.id === id));
+  hintIcon.textContent = SHAPES.find(s => s.id === id).icon;
+  resetAll();
+}
+
+// ── Canvas Setup ──────────────────────────
+function resizeCanvas() {
+  const sz = Math.min(500, window.innerWidth - 40);
+  canvas.width = sz;
+  canvas.height = sz;
+  drawGrid();
+}
+
+function drawGrid() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// ── Drawing Events ────────────────────────
+function pos(e) {
+  const r = canvas.getBoundingClientRect();
+  const sx = canvas.width / r.width;
+  const sy = canvas.height / r.height;
+  const src = e.touches ? e.touches[0] : e;
+  return { x: (src.clientX - r.left) * sx, y: (src.clientY - r.top) * sy };
+}
+
+canvas.addEventListener('mousedown',  e => startDraw(e));
+canvas.addEventListener('mousemove',  e => moveDraw(e));
+canvas.addEventListener('mouseup',    e => endDraw(e));
+canvas.addEventListener('mouseleave', e => endDraw(e));
+canvas.addEventListener('touchstart', e => { e.preventDefault(); startDraw(e); }, { passive:false });
+canvas.addEventListener('touchmove',  e => { e.preventDefault(); moveDraw(e); }, { passive:false });
+canvas.addEventListener('touchend',   e => { e.preventDefault(); endDraw(e);  }, { passive:false });
+
+function startDraw(e) {
+  drawing = true; pts = [];
+  hintEl.style.opacity = '0';
+  canvas.classList.add('on');
+  const p = pos(e);
+  pts.push(p);
+  ctx.save();
+  drawGrid();
+  ctx.restore();
+  ctx.beginPath();
+  ctx.moveTo(p.x, p.y);
+}
+
+function moveDraw(e) {
+  if (!drawing) return;
+  const p = pos(e);
+  pts.push(p);
+  ctx.strokeStyle = '#00d4ff';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = '#00d4ff';
+  ctx.shadowBlur = 10;
+  ctx.lineTo(p.x, p.y);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(p.x, p.y);
+}
+
+function endDraw() {
+  if (!drawing) return;
+  drawing = false;
+  canvas.classList.remove('on');
+  ctx.shadowBlur = 0;
+
+  if (pts.length < 20) { hintEl.style.opacity = '1'; drawGrid(); return; }
+
+  const result = scoreShape(pts, cur);
+  lastScore = result.score;
+  showScore(result);
+  drawIdeal(pts, cur);
+}
+
+// ── Helpers ───────────────────────────────
+function avg(arr) { return arr.reduce((s, v) => s + v, 0) / arr.length; }
+function hyp(ax, ay, bx, by) { return Math.hypot(ax - bx, ay - by); }
+
+function downsample(pts, n) {
+  if (pts.length <= n) return pts;
+  const out = [];
+  const step = pts.length / n;
+  for (let i = 0; i < n; i++) out.push(pts[Math.floor(i * step)]);
+  return out;
+}
+
+function minDist(pts, tx, ty) {
+  let m = Infinity;
+  for (const p of pts) { const d = hyp(p.x, p.y, tx, ty); if (d < m) m = d; }
+  return m;
+}
+
+// 경로 총 길이 계산
+function pathLength(pts) {
+  let len = 0;
+  for (let i = 1; i < pts.length; i++)
+    len += hyp(pts[i].x, pts[i].y, pts[i-1].x, pts[i-1].y);
+  return len;
+}
+
+// 둘레 → 외접원 반지름 변환
+// - 원: R = perimeter / (2π)
+// - 정N각형: 변 = perimeter/N,  R = 변 / (2·sin(π/N))
+function perimToR(perimeter, shape) {
+  if (shape === 'circle') return perimeter / (2 * Math.PI);
+  const N = SHAPES.find(s => s.id === shape).sides;
+  return (perimeter / N) / (2 * Math.sin(Math.PI / N));
+}
+
+// ── Scoring ───────────────────────────────
+function scoreShape(rawPts, shape) {
+  const pts = downsample(rawPts, 200);
+  const cx = avg(pts.map(p => p.x));
+  const cy = avg(pts.map(p => p.y));
+  const radii = pts.map(p => hyp(p.x, p.y, cx, cy));
+  const meanR = avg(radii);
+
+  if (meanR < 28) return { score:0, breakdown:{}, cx, cy, R:0, bestRot:0 };
+
+  // 둘레 기반 외접원 반지름 (수학적으로 정확)
+  const perim = pathLength(pts);
+  const R = perimToR(perim, shape);
+
+  // Closedness
+  const fp = rawPts[0], lp = rawPts[rawPts.length - 1];
+  const closeDist = hyp(fp.x, fp.y, lp.x, lp.y);
+  const closeScore = Math.max(0, 1 - closeDist / (R * 1.2));
+
+  if (shape === 'circle') {
+    const variance = avg(radii.map(r => (r - R) ** 2));
+    const cv = Math.sqrt(variance) / R;
+    const circ = Math.max(0, 1 - cv * 2.8);
+    const raw = circ * 0.75 + closeScore * 0.25;
+    return {
+      score: Math.round(raw * 100),
+      breakdown: { '원형도': Math.round(circ * 100), '닫힘': Math.round(closeScore * 100) },
+      cx, cy, R, bestRot: 0
+    };
+  }
+
+  const N = SHAPES.find(s => s.id === shape).sides;
+  let bestV = 0, bestS = 0, bestRot = 0, bestTotal = -1;
+
+  for (let r = 0; r < 360; r++) {
+    const rot = (r / 360) * Math.PI * 2;
+    let vs = 0, ss = 0;
+
+    for (let i = 0; i < N; i++) {
+      const a1 = rot + (i / N) * Math.PI * 2;
+      const a2 = rot + ((i + 1) / N) * Math.PI * 2;
+      const v1 = { x: cx + R * Math.cos(a1), y: cy + R * Math.sin(a1) };
+      const v2 = { x: cx + R * Math.cos(a2), y: cy + R * Math.sin(a2) };
+
+      const dv = minDist(pts, v1.x, v1.y);
+      vs += Math.max(0, 1 - dv / (R * 0.3));
+
+      let sp = 0;
+      for (let j = 1; j <= 5; j++) {
+        const t = j / 6;
+        const ds = minDist(pts, v1.x + t*(v2.x-v1.x), v1.y + t*(v2.y-v1.y));
+        sp += Math.max(0, 1 - ds / (R * 0.22));
+      }
+      ss += sp / 5;
+    }
+
+    const tv = vs / N, ts = ss / N;
+    if (tv + ts > bestTotal) { bestTotal = tv + ts; bestV = tv; bestS = ts; bestRot = rot; }
+  }
+
+  const raw = bestV * 0.42 + bestS * 0.38 + closeScore * 0.2;
+  return {
+    score: Math.round(raw * 100),
+    breakdown: {
+      '꼭짓점': Math.round(bestV * 100),
+      '직선도': Math.round(bestS * 100),
+      '닫힘':   Math.round(closeScore * 100),
+    },
+    cx, cy, R, bestRot
+  };
+}
+
+// 정방향 고정 각도 (도형 종류별)
+const CANONICAL_ANGLE = {
+  circle:   0,
+  square:   -Math.PI / 4,   // 꼭짓점이 대각선 → 변이 수평/수직
+  triangle: -Math.PI / 2,   // 꼭짓점이 위
+  pentagon: -Math.PI / 2,   // 꼭짓점이 위
+  hexagon:  0,              // 꼭짓점이 좌우 → 변이 위아래 수평
+};
+
+// ── Ideal Shape Overlay ───────────────────
+function drawIdeal(rawPts, shape) {
+  const pts = downsample(rawPts, 150);
+  const cx = avg(pts.map(p => p.x));
+  const cy = avg(pts.map(p => p.y));
+
+  // 둘레 기반 외접원 반지름 (수학적 정확)
+  const perim = pathLength(pts);
+  const drawR = perimToR(perim, shape);
+
+  const startAngle = CANONICAL_ANGLE[shape];
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,215,0,0.75)';
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([9, 5]);
+  ctx.shadowColor = '#ffd700';
+  ctx.shadowBlur = 14;
+  ctx.beginPath();
+
+  if (shape === 'circle') {
+    ctx.arc(cx, cy, drawR, 0, Math.PI * 2);
+  } else {
+    const N = SHAPES.find(s => s.id === shape).sides;
+    for (let i = 0; i <= N; i++) {
+      const a = startAngle + (i / N) * Math.PI * 2;
+      const x = cx + drawR * Math.cos(a);
+      const y = cy + drawR * Math.sin(a);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+  }
+
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ── Show Score ────────────────────────────
+function showScore(result) {
+  const { score: sc, breakdown } = result;
+
+  scoreBox.style.display = 'none';
+  void scoreBox.offsetWidth;
+  scoreBox.classList.add('show');
+  scoreBox.style.display = '';
+
+  // count-up animation
+  const t0 = performance.now();
+  const dur = 700;
+  (function tick(now) {
+    const t = Math.min((now - t0) / dur, 1);
+    const ease = 1 - (1 - t) ** 3;
+    scoreNum.textContent = Math.round(ease * sc) + '%';
+    if (t < 1) requestAnimationFrame(tick);
+    else scoreNum.textContent = sc + '%';
+  })(t0);
+
+  const { cls, label } = rating(sc);
+  scoreNum.className = 'score-num ' + cls;
+  ratingEl.textContent = label;
+  ratingEl.className = 'rating ' + cls;
+
+  // best check
+  const prev = bests[cur] ?? -1;
+  let newBestHTML = '';
+  if (sc > prev) {
+    bests[cur] = sc;
+    localStorage.setItem('ps_best', JSON.stringify(bests));
+    updateBests();
+    if (sc > 0) newBestHTML = '<span class="new-best">🏆 신기록!</span>';
+  }
+
+  bdEl.innerHTML =
+    Object.entries(breakdown).map(([k, v]) =>
+      `<div class="bd-item">${k}: <b>${v}%</b></div>`).join('')
+    + newBestHTML;
+
+  btnsEl.style.display = 'flex';
+}
+
+function rating(sc) {
+  if (sc >= 95) return { cls:'s',  label:'🌟 PERFECT' };
+  if (sc >= 80) return { cls:'a',  label:'✨ EXCELLENT' };
+  if (sc >= 65) return { cls:'b',  label:'👍 GOOD' };
+  if (sc >= 45) return { cls:'cc', label:'😅 TRY AGAIN' };
+  return            { cls:'d',  label:'💀 TERRIBLE' };
+}
+
+function updateBests() {
+  SHAPES.forEach(s => {
+    const el = document.getElementById(`best-${s.id}`);
+    if (el) el.textContent = bestLabel(s.id);
+  });
+}
+
+// ── Reset / Share ─────────────────────────
+function resetAll() {
+  pts = []; drawing = false;
+  drawGrid();
+  hintEl.style.opacity = '1';
+  scoreBox.style.display = 'none';
+  scoreBox.classList.remove('show');
+  btnsEl.style.display = 'none';
+  canvas.classList.remove('on');
+  ctx.shadowBlur = 0;
+}
+
+function share() {
+  const s = SHAPES.find(s => s.id === cur);
+  const { label } = rating(lastScore);
+  const txt = `🎯 완벽한 도형 그리기\n${s.icon} ${s.name}: ${lastScore}%\n${label}\n\n지금 도전해보세요!`;
+  navigator.clipboard.writeText(txt)
+    .then(() => alert('📋 클립보드에 복사되었습니다!'))
+    .catch(() => prompt('아래 텍스트를 복사하세요:', txt));
+}
+
+// ── Init ──────────────────────────────────
+window.addEventListener('resize', () => { resizeCanvas(); resetAll(); });
+resizeCanvas();
+</script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>개인정보처리방침 — 도파민 게임</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#080816;--surface:#0f0f28;--accent:#6c3aff;--cyan:#00d4ff;--text:#e8e8ff;--dim:#8080b0; }
+    * { margin:0;padding:0;box-sizing:border-box; }
+    body { font-family:'Noto Sans KR','Outfit',sans-serif;background:var(--bg);color:var(--text);line-height:1.8; }
+    .wrap { max-width:800px;margin:0 auto;padding:3rem 1.5rem 5rem; }
+    .back { display:inline-flex;align-items:center;gap:.4rem;color:var(--cyan);text-decoration:none;font-size:.85rem;margin-bottom:2rem;font-weight:700; }
+    .back:hover { opacity:.8; }
+    h1 { font-size:1.8rem;font-weight:900;margin-bottom:.4rem;
+      background:linear-gradient(135deg,var(--cyan),var(--accent));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+    .updated { color:var(--dim);font-size:.82rem;margin-bottom:2.5rem; }
+    h2 { font-size:1.05rem;font-weight:700;color:var(--cyan);margin:2rem 0 .6rem;padding-left:.8rem;border-left:3px solid var(--accent); }
+    p  { font-size:.9rem;color:#c0c0d8;margin-bottom:.8rem; }
+    ul { padding-left:1.4rem;margin-bottom:.8rem; }
+    li { font-size:.9rem;color:#c0c0d8;margin-bottom:.3rem; }
+    table { width:100%;border-collapse:collapse;margin:1rem 0;font-size:.85rem; }
+    th { background:var(--surface);color:var(--cyan);padding:.6rem .8rem;border:1px solid rgba(255,255,255,.08);text-align:left; }
+    td { padding:.5rem .8rem;border:1px solid rgba(255,255,255,.06);color:#c0c0d8;vertical-align:top; }
+    .notice { background:rgba(108,58,255,.1);border:1px solid rgba(108,58,255,.3);border-radius:8px;padding:.8rem 1rem;font-size:.85rem;color:#c0c0e0;margin:1rem 0; }
+    a { color:var(--cyan);text-decoration:none; }
+    a:hover { text-decoration:underline; }
+  </style>
+  <script src="security.js"></script>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="index.html">← 메인으로 돌아가기</a>
+
+  <h1>개인정보처리방침</h1>
+  <p class="updated">시행일: 2026년 3월 14일 &nbsp;|&nbsp; 최종 수정: 2026년 3월 14일</p>
+
+  <p>도파민 게임(이하 "서비스")은 이용자의 개인정보를 중요하게 생각하며, 「개인정보 보호법」 및 관련 법령을 준수합니다. 본 방침은 서비스 운영자가 어떤 정보를 수집하고 어떻게 이용하는지 안내합니다.</p>
+
+  <!-- 1 -->
+  <h2>제1조 개인정보의 처리 목적</h2>
+  <p>서비스는 다음 목적 이외의 용도로 개인정보를 이용하지 않습니다.</p>
+  <ul>
+    <li>서비스 품질 개선 및 이용 통계 분석</li>
+    <li>맞춤형 광고 제공 (Google AdSense 연동)</li>
+    <li>부정 이용 방지 및 서비스 보안 유지</li>
+  </ul>
+
+  <!-- 2 -->
+  <h2>제2조 수집하는 개인정보의 항목 및 수집 방법</h2>
+  <p>서비스는 회원 가입이 없으며, 이용자가 직접 입력하는 개인정보를 수집하지 않습니다. 다만 웹사이트 이용 과정에서 아래 정보가 자동으로 수집될 수 있습니다.</p>
+  <table>
+    <tr><th>항목</th><th>수집 방법</th><th>목적</th></tr>
+    <tr><td>IP 주소</td><td>자동 수집 (서버 로그)</td><td>보안 및 부정 이용 방지</td></tr>
+    <tr><td>브라우저 종류/버전, OS 정보</td><td>자동 수집 (HTTP 헤더)</td><td>서비스 호환성 최적화</td></tr>
+    <tr><td>방문 페이지, 체류 시간, 클릭 이벤트</td><td>쿠키 및 유사 기술</td><td>서비스 분석·개선</td></tr>
+    <tr><td>광고 관련 식별자 (쿠키, 광고 ID)</td><td>Google AdSense 자동 수집</td><td>맞춤형 광고 제공</td></tr>
+  </table>
+  <div class="notice">
+    📌 게임 점수 등 플레이 데이터는 이용자의 기기(localStorage)에만 저장되며, 서버로 전송되지 않습니다.
+  </div>
+
+  <!-- 3 -->
+  <h2>제3조 개인정보의 보유 및 이용 기간</h2>
+  <p>자동 수집 정보는 수집 시점으로부터 <strong>최대 1년</strong> 이내 파기합니다. Google AdSense가 수집하는 쿠키·광고 데이터의 보유 기간은 Google의 개인정보처리방침을 따릅니다.</p>
+
+  <!-- 4 (추가: 파기 절차 및 방법) -->
+  <h2>제4조 개인정보의 파기 절차 및 방법</h2>
+  <p>서비스는 원칙적으로 개인정보 처리 목적이 달성된 경우 지체 없이 해당 개인정보를 파기합니다. 파기 절차 및 방법은 다음과 같습니다.</p>
+  <ul>
+    <li><strong>파기절차:</strong> 목적이 달성된 정보는 별도의 DB(또는 별도 서류)로 옮겨져 보존기간에 따라 일정 기간 저장된 후 파기됩니다.</li>
+    <li><strong>파기방법:</strong> 전자적 파일 형태로 저장된 개인정보는 기록을 재생할 수 없는 기술적 방법을 사용하여 삭제합니다.</li>
+  </ul>
+
+  <!-- 5 -->
+  <h2>제5조 개인정보의 제3자 제공</h2>
+  <p>서비스는 원칙적으로 이용자의 개인정보를 외부에 제공하지 않습니다. 다만 광고 서비스 운영을 위해 아래 업체에 정보가 제공됩니다.</p>
+  <table>
+    <tr><th>제공 받는 자</th><th>제공 목적</th><th>제공 항목</th><th>보유 기간</th></tr>
+    <tr>
+      <td>Google LLC</td>
+      <td>맞춤형 광고 제공 (AdSense)</td>
+      <td>쿠키, 광고 식별자, 방문 정보</td>
+      <td>Google 정책에 따름</td>
+    </tr>
+  </table>
+  <p>Google 개인정보처리방침: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">https://policies.google.com/privacy</a></p>
+
+  <!-- 6 -->
+  <h2>제6조 쿠키(Cookie) 사용</h2>
+  <p>서비스는 Google AdSense 광고 제공을 위해 쿠키를 사용합니다. 이용자는 브라우저 설정을 통해 쿠키 저장을 거부할 수 있으나, 일부 광고 기능이 제한될 수 있습니다.</p>
+  <ul>
+    <li>Chrome: 설정 → 개인정보 및 보안 → 쿠키 및 기타 사이트 데이터</li>
+    <li>Safari: 환경설정 → 개인 정보 보호 → 쿠키 및 웹사이트 데이터</li>
+    <li>Edge: 설정 → 쿠키 및 사이트 데이터</li>
+  </ul>
+  <p>맞춤 광고를 거부하려면 Google 광고 설정(<a href="https://adssettings.google.com" target="_blank" rel="noopener">adssettings.google.com</a>)에서 개인 맞춤 광고를 끄세요.</p>
+
+  <!-- 7 -->
+  <h2>제7조 이용자의 권리</h2>
+  <p>이용자는 언제든지 아래 권리를 행사할 수 있습니다.</p>
+  <ul>
+    <li>개인정보 처리 정지 요청</li>
+    <li>개인정보 열람·정정·삭제 요청</li>
+    <li>개인정보 처리에 대한 동의 철회</li>
+  </ul>
+  <p>권리 행사는 아래 개인정보 보호책임자에게 이메일로 요청하실 수 있습니다.</p>
+
+  <!-- 8 -->
+  <h2>제8조 개인정보 보호책임자 및 접수·처리 부서</h2>
+  <p>서비스는 개인정보 처리에 관한 업무를 총괄해서 책임지고, 개인정보 처리와 관련한 이용자의 불만 처리 및 피해 구제를 위하여 아래와 같이 개인정보 보호책임자를 지정하고 있습니다.</p>
+  <table>
+    <tr><th>항목</th><th>내용</th></tr>
+    <tr><td>책임자(담당부서)</td><td>민병철 (운영자)</td></tr>
+    <tr><td>이메일</td><td><a href="mailto:sjf2584@gmail.com">sjf2584@gmail.com</a></td></tr>
+  </table>
+  <div class="notice">
+    📌 책임자명은 실명이 원칙이나, 개인 운영 사이트의 경우 정확한 연락망(이메일)이 갖춰져 있다면 '운영자' 또는 닉네임 기재 후 추후 심사 반려 시 실명으로 변경하셔도 무방합니다.
+  </div>
+
+  <!-- 9 (추가: 권익침해 구제방법) -->
+  <h2>제9조 권익침해 구제방법</h2>
+  <p>이용자는 개인정보침해로 인한 구제를 받기 위하여 아래의 기관에 분쟁 해결이나 상담 등을 신청할 수 있습니다.</p>
+  <ul>
+    <li>개인정보 분쟁조정위원회: (국번없이) 1833-6972 (www.kopico.go.kr)</li>
+    <li>개인정보침해신고센터: (국번없이) 118 (privacy.kisa.or.kr)</li>
+    <li>대검찰청: (국번없이) 1301 (www.spo.go.kr)</li>
+    <li>경찰청: (국번없이) 182 (ecrm.cyber.go.kr)</li>
+  </ul>
+
+  <!-- 10 -->
+  <h2>제10조 개인정보처리방침의 변경</h2>
+  <p>본 방침은 법령·정책 변경 또는 서비스 변경에 따라 내용이 수정될 수 있습니다. 변경 사항은 웹사이트 공지 또는 본 페이지를 통해 고지합니다.</p>
+  <p>시행일: <strong>2026년 3월 14일</strong></p>
+
+</div>
+</body>
+</html>

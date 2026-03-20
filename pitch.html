@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>절대음감 테스트 | 도파민 게임</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#080816; --surface:#0f0f28; --surface2:#181840;
+      --accent:#6c3aff; --cyan:#00d4ff; --pink:#ff3aac;
+      --gold:#ffd700; --text:#e8e8ff; --dim:#6060a0;
+      --green:#00ff88; --red:#ff4444;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family:'Outfit','Noto Sans KR',sans-serif;
+      background:var(--bg); color:var(--text);
+      min-height:100vh; display:flex; flex-direction:column;
+      align-items:center; overflow-x:hidden; padding-bottom:2rem;
+    }
+    body::before {
+      content:''; position:fixed; inset:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse at 25% 10%, rgba(108,58,255,.12) 0%, transparent 55%),
+        radial-gradient(ellipse at 75% 85%, rgba(0,212,255,.08) 0%, transparent 55%);
+    }
+
+    header { text-align:center; padding:2rem 1rem .5rem; z-index:1; position:relative; }
+    header h1 {
+      font-size:clamp(1.8rem,5vw,3rem); font-weight:900;
+      background:linear-gradient(135deg,var(--cyan),var(--accent),var(--pink));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    header p { color:var(--dim); font-size:.9rem; margin-top:.4rem; }
+
+    /* ── Controls ── */
+    .controls {
+      display:flex; flex-direction:column; gap:.7rem;
+      margin:.8rem 0; padding:0 1rem; z-index:1; position:relative;
+      width:min(520px, 100%);
+    }
+    .ctrl-row { display:flex; gap:.5rem; justify-content:center; flex-wrap:wrap; }
+    .ctrl-label { font-size:.7rem; color:var(--dim); font-weight:700; letter-spacing:.08em; text-transform:uppercase; text-align:center; }
+
+    .tog-btn {
+      padding:.5rem 1rem; border:1.5px solid rgba(108,58,255,.3);
+      background:var(--surface); border-radius:10px; cursor:pointer;
+      font-family:inherit; font-size:.85rem; color:var(--dim);
+      transition:all .2s; font-weight:600;
+    }
+    .tog-btn:hover { border-color:var(--accent); color:var(--text); }
+    .tog-btn.active {
+      background:linear-gradient(135deg,rgba(108,58,255,.3),rgba(0,212,255,.15));
+      border-color:var(--cyan); color:var(--cyan);
+      box-shadow:0 0 14px rgba(0,212,255,.25);
+    }
+
+    /* ── Slots (note answer boxes) ── */
+    .slots-wrap {
+      display:flex; flex-direction:column; align-items:center; gap:.8rem;
+      margin:.6rem 0; z-index:1; position:relative;
+    }
+    .slots { display:flex; gap:.5rem; justify-content:center; flex-wrap:wrap; }
+    .slot {
+      width:56px; height:56px; border-radius:12px;
+      border:2px dashed rgba(108,58,255,.4);
+      background:var(--surface);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      font-size:.8rem; font-weight:700; transition:all .25s;
+      position:relative;
+    }
+    .slot.filled { border-style:solid; border-color:var(--accent); }
+    .slot.correct { border-color:var(--green); background:rgba(0,255,136,.12); color:var(--green); }
+    .slot.wrong   { border-color:var(--red);   background:rgba(255,68,68,.12);  color:var(--red); }
+    .slot .note-kr { font-size:.95rem; }
+    .slot .note-en { font-size:.6rem; color:var(--dim); }
+
+    /* Play button */
+    .play-btn {
+      padding:.75rem 2.2rem; border:none; border-radius:14px;
+      font-family:inherit; font-size:1.1rem; font-weight:800; cursor:pointer;
+      background:linear-gradient(135deg,var(--accent),var(--pink));
+      color:#fff; box-shadow:0 4px 20px rgba(108,58,255,.4);
+      transition:all .2s; letter-spacing:.02em;
+    }
+    .play-btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 28px rgba(108,58,255,.5); }
+    .play-btn:disabled { opacity:.5; cursor:default; transform:none; }
+    .play-btn.playing {
+      background:linear-gradient(135deg,var(--cyan),var(--accent));
+      animation:pulse .6s ease infinite alternate;
+    }
+    @keyframes pulse { from{box-shadow:0 4px 20px rgba(0,212,255,.4)} to{box-shadow:0 4px 32px rgba(0,212,255,.7)} }
+
+    .replay-btn {
+      padding:.4rem 1rem; border:1.5px solid rgba(0,212,255,.3);
+      background:transparent; border-radius:8px; color:var(--cyan);
+      font-family:inherit; font-size:.8rem; font-weight:700; cursor:pointer;
+      transition:all .2s;
+    }
+    .replay-btn:hover { border-color:var(--cyan); background:rgba(0,212,255,.1); }
+    .replay-btn:disabled { opacity:.3; cursor:default; }
+
+    /* ── Piano keyboard ── */
+    .keyboard-section {
+      margin:.8rem 0; z-index:1; position:relative;
+      overflow-x:auto; max-width:100vw; padding:0 1rem;
+    }
+    .keyboard {
+      position:relative;
+      height:150px;
+      display:inline-flex;
+      user-select:none;
+    }
+    .wkey {
+      width:48px; height:150px; flex:none;
+      background:linear-gradient(180deg,#dde8ff 0%,#f0f4ff 100%);
+      border:1.5px solid rgba(0,0,0,.25); border-top:none;
+      border-radius:0 0 10px 10px;
+      display:flex; flex-direction:column; align-items:center;
+      justify-content:flex-end; padding-bottom:8px;
+      cursor:pointer; transition:background .1s, transform .1s;
+      position:relative; z-index:1;
+    }
+    .wkey:hover { background:linear-gradient(180deg,#bbd4ff,#d8e8ff); }
+    .wkey.active { background:linear-gradient(180deg,#00d4ff33,#a0e0ff); transform:scaleY(.97); }
+    .wkey.correct-flash { background:linear-gradient(180deg,#00ff8866,#00ff8833) !important; }
+    .wkey.wrong-flash   { background:linear-gradient(180deg,#ff444466,#ff444433) !important; }
+    .wkey .kr { font-size:.7rem; font-weight:800; color:#1a1a3a; }
+    .wkey .en { font-size:.6rem; color:#555; }
+
+    .bkey {
+      position:absolute; z-index:2;
+      width:32px; height:95px;
+      background:linear-gradient(180deg,#1a1a2e,#2d1b69);
+      border-radius:0 0 7px 7px;
+      display:flex; flex-direction:column; align-items:center;
+      justify-content:flex-end; padding-bottom:6px;
+      cursor:pointer; transition:background .1s, transform .1s;
+      box-shadow:0 4px 8px rgba(0,0,0,.5);
+    }
+    .bkey:hover { background:linear-gradient(180deg,#2d2d4e,#4a2a99); }
+    .bkey.active { background:linear-gradient(180deg,#00d4ff44,#6c3aff88); transform:scaleY(.97); }
+    .bkey.correct-flash { background:linear-gradient(180deg,#00ff8888,#00ff8844) !important; }
+    .bkey.wrong-flash   { background:linear-gradient(180deg,#ff444488,#ff444444) !important; }
+    .bkey .kr { font-size:.55rem; font-weight:700; color:#a0c0ff; }
+    .bkey .en { font-size:.5rem;  color:#7090cc; }
+
+    /* ── Score / Result ── */
+    .result-zone {
+      text-align:center; margin:.8rem 0;
+      z-index:1; position:relative; min-height:80px;
+    }
+    .result-box { animation:fadeUp .4s ease; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    .score-big { font-size:clamp(2.5rem,8vw,5rem); font-weight:900; letter-spacing:-2px; line-height:1; }
+    .score-label { font-size:1.05rem; font-weight:800; margin-top:.2rem; }
+    .score-detail { font-size:.8rem; color:var(--dim); margin:.4rem 0 .8rem; }
+
+    .btn-row { display:flex; gap:.7rem; justify-content:center; flex-wrap:wrap; margin-top:.5rem; }
+    .btn-p {
+      padding:.7rem 1.6rem; border:none; border-radius:12px;
+      font-family:inherit; font-size:.9rem; font-weight:700; cursor:pointer;
+      background:linear-gradient(135deg,var(--accent),var(--pink)); color:#fff;
+      transition:all .2s; box-shadow:0 4px 16px rgba(108,58,255,.35);
+    }
+    .btn-p:hover { transform:translateY(-2px); }
+    .btn-s {
+      padding:.7rem 1.4rem; border:1.5px solid rgba(255,255,255,.12);
+      background:var(--surface); border-radius:12px;
+      font-family:inherit; font-size:.9rem; color:var(--text); cursor:pointer; transition:all .2s;
+    }
+    .btn-s:hover { border-color:var(--accent); }
+
+    .s  { color:var(--gold); }
+    .a  { color:var(--green); }
+    .b  { color:var(--cyan); }
+    .cc { color:#ff9500; }
+    .d  { color:var(--red); }
+
+    /* AdSense 사이드바 */
+    .ad-sidebar { position:fixed; top:50%; transform:translateY(-50%); width:160px; z-index:10; }
+    .ad-left  { left:8px; }
+    .ad-right { right:8px; }
+    @media (max-width:1300px) { .ad-sidebar { display:none; } }
+  </style>
+  <!-- Google AdSense: pub-1363977997493751 로 교체 후 주석 해제 -->
+  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=pub-1363977997493751" crossorigin="anonymous"></script> -->
+  <script src="security.js"></script>
+</head>
+<body>
+<div class="ad-sidebar ad-left">
+  <ins class="adsbygoogle" style="display:block;width:160px;height:600px"
+    data-ad-client="pub-1363977997493751" data-ad-slot="XXXXXXXXXX"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+<div class="ad-sidebar ad-right">
+  <ins class="adsbygoogle" style="display:block;width:160px;height:600px"
+    data-ad-client="pub-1363977997493751" data-ad-slot="XXXXXXXXXX"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+
+<header>
+  <h1>🎵 절대음감 테스트</h1>
+  <p>재생 버튼을 누른 후 들은 음을 건반에서 맞춰보세요!</p>
+</header>
+
+<!-- Controls -->
+<div class="controls">
+  <div class="ctrl-label">🎹 악기 선택</div>
+  <div class="ctrl-row" id="instrRow">
+    <button class="tog-btn active" data-instr="piano">🎹 피아노</button>
+    <button class="tog-btn" data-instr="guitar">🎸 기타</button>
+    <button class="tog-btn" data-instr="recorder">🎶 플루트</button>
+  </div>
+  <div class="ctrl-label" style="margin-top:.3rem">🎯 음 개수</div>
+  <div class="ctrl-row" id="modeRow">
+    <button class="tog-btn active" data-count="1">1음</button>
+    <button class="tog-btn" data-count="2">2음</button>
+    <button class="tog-btn" data-count="3">3음</button>
+    <button class="tog-btn" data-count="4">4음</button>
+    <button class="tog-btn" data-count="5">5음</button>
+  </div>
+</div>
+
+<!-- Answer Slots -->
+<div class="slots-wrap">
+  <div class="slots" id="slots"></div>
+  <div style="display:flex;gap:.7rem;align-items:center;margin-top:.3rem">
+    <button class="play-btn" id="playBtn" onclick="playNotes()">▶ 재생</button>
+    <button class="replay-btn" id="replayBtn" onclick="replayNotes()" disabled>🔁 다시듣기 (<span id="replaysLeft">1</span>)</button>
+  </div>
+</div>
+
+<!-- Keyboard -->
+<div class="keyboard-section">
+  <div class="keyboard" id="keyboard"></div>
+</div>
+
+<!-- Result -->
+<div class="result-zone" id="resultZone"></div>
+
+
+
+<script>
+// ── Note data ────────────────────────────
+const NOTES = [
+  { en:'C',  kr:'도',  black:false, freq:261.63 },
+  { en:'C#', kr:'도#', black:true,  freq:277.18 },
+  { en:'D',  kr:'레',  black:false, freq:293.66 },
+  { en:'D#', kr:'레#', black:true,  freq:311.13 },
+  { en:'E',  kr:'미',  black:false, freq:329.63 },
+  { en:'F',  kr:'파',  black:false, freq:349.23 },
+  { en:'F#', kr:'파#', black:true,  freq:369.99 },
+  { en:'G',  kr:'솔',  black:false, freq:392.00 },
+  { en:'G#', kr:'솔#', black:true,  freq:415.30 },
+  { en:'A',  kr:'라',  black:false, freq:440.00 },
+  { en:'A#', kr:'라#', black:true,  freq:466.16 },
+  { en:'B',  kr:'시',  black:false, freq:493.88 },
+];
+
+// ── State ────────────────────────────────
+let instrument = 'piano';
+let noteCount  = 1;
+let targets    = [];      // array of note indices (0-11)
+let answers    = [];      // array of filled answers
+let replaysLeft = 1;
+let gameState  = 'idle';  // idle | playing | answering | done
+let audioCtx   = null;
+
+// ── Audio ─────────────────────────────────
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playPiano(freq, when = 0) {
+  const ctx = getAudio();
+  const t = ctx.currentTime + when;
+  const master = ctx.createGain();
+  master.connect(ctx.destination);
+  master.gain.setValueAtTime(0.001, t);
+  master.gain.linearRampToValueAtTime(0.4, t + 0.012);
+  master.gain.exponentialRampToValueAtTime(0.001, t + 2.2);
+
+  [[1,1.0],[2,0.5],[3,0.25],[4,0.12],[6,0.06]].forEach(([m, g]) => {
+    const o = ctx.createOscillator(); const gn = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = freq * m; gn.gain.value = g;
+    o.connect(gn); gn.connect(master);
+    o.start(t); o.stop(t + 2.2);
+  });
+}
+
+function playGuitar(freq, when = 0) {
+  const ctx = getAudio();
+  const sr = ctx.sampleRate;
+  const dur = 2.5;
+  const N = Math.round(sr / freq);
+  const len = Math.ceil(sr * dur);
+  const buf = ctx.createBuffer(1, len, sr);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < N; i++) data[i] = (Math.random()*2-1) * 0.8;
+  for (let i = N; i < len; i++) data[i] = 0.996 * 0.5 * (data[i-N] + data[i-N+1]);
+
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 5000;
+  const g = ctx.createGain(); g.gain.setValueAtTime(0.85, ctx.currentTime + when);
+  src.connect(f); f.connect(g); g.connect(ctx.destination);
+  src.start(ctx.currentTime + when);
+}
+
+function playRecorder(freq, when = 0) {
+  const ctx = getAudio();
+  const t = ctx.currentTime + when;
+  const osc = ctx.createOscillator();
+  const lfo = ctx.createOscillator();
+  const lfoG = ctx.createGain();
+  const gain = ctx.createGain();
+
+  osc.type = 'sine'; osc.frequency.value = freq;
+  lfo.type = 'sine'; lfo.frequency.value = 5.5; lfoG.gain.value = 4;
+  lfo.connect(lfoG); lfoG.connect(osc.frequency);
+  osc.connect(gain); gain.connect(ctx.destination);
+
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(0.38, t + 0.06);
+  gain.gain.setValueAtTime(0.38, t + 0.75);
+  gain.gain.linearRampToValueAtTime(0, t + 1.0);
+
+  lfo.start(t); osc.start(t);
+  lfo.stop(t + 1.0); osc.stop(t + 1.0);
+}
+
+function playNote(noteIdx, when = 0) {
+  const freq = NOTES[noteIdx].freq;
+  if (instrument === 'piano')    playPiano(freq, when);
+  else if (instrument === 'guitar')   playGuitar(freq, when);
+  else                           playRecorder(freq, when);
+}
+
+function playSequence(indices, onDone) {
+  const gap = instrument === 'guitar' ? 1.2 : 1.0;
+  indices.forEach((idx, i) => playNote(idx, i * gap));
+  const totalTime = (indices.length - 1) * gap + 2.0;
+  if (onDone) setTimeout(onDone, totalTime * 1000);
+}
+
+// ── Build keyboard ────────────────────────
+function buildKeyboard() {
+  const kb = document.getElementById('keyboard');
+  kb.innerHTML = '';
+  const whiteKeys = NOTES.filter(n => !n.black);
+  // Total width = 7 white keys * 50px (key 48 + gap 2)
+  const W = 50, BW = 32, BH = 95;
+
+  // White key offsets (left edge)
+  const whiteX = [0,1,2,3,4,5,6].map(i => i * W);
+
+  // Black key offsets (between whites)
+  // C#=between 0,1  D#=between 1,2  F#=between 3,4  G#=between 4,5  A#=between 5,6
+  const blackMap = { 1:0, 3:1, 6:3, 8:4, 10:5 }; // noteIdx → between whiteIdx and whiteIdx+1
+
+  let whiteCount = 0;
+  NOTES.forEach((note, idx) => {
+    const el = document.createElement('div');
+    if (!note.black) {
+      el.className = 'wkey';
+      el.dataset.note = idx;
+      el.innerHTML = `<span class="kr">${note.kr}</span><span class="en">${note.en}</span>`;
+      kb.appendChild(el);
+      el.addEventListener('click', () => onKeyClick(idx));
+      whiteCount++;
+    }
+  });
+
+  // Set total width
+  kb.style.width = (7 * W) + 'px';
+
+  // Add black keys absolutely
+  NOTES.forEach((note, idx) => {
+    if (!note.black) return;
+    const wi = blackMap[idx]; // which white interval
+    const el = document.createElement('div');
+    el.className = 'bkey';
+    el.dataset.note = idx;
+    el.innerHTML = `<span class="kr">${note.kr}</span><span class="en">${note.en}</span>`;
+    el.style.left = (whiteX[wi] + W - BW/2 - 2) + 'px';
+    el.style.top = '0';
+    el.style.height = BH + 'px';
+    el.style.width = BW + 'px';
+    kb.appendChild(el);
+    el.addEventListener('click', () => onKeyClick(idx));
+  });
+}
+
+// ── Slots ────────────────────────────────
+function buildSlots() {
+  const wrap = document.getElementById('slots');
+  wrap.innerHTML = '';
+  for (let i = 0; i < noteCount; i++) {
+    const s = document.createElement('div');
+    s.className = 'slot';
+    s.id = 'slot' + i;
+    s.innerHTML = '<span class="note-kr">?</span>';
+    wrap.appendChild(s);
+  }
+}
+
+function fillSlot(idx, noteIdx) {
+  const s = document.getElementById('slot' + idx);
+  if (!s) return;
+  s.classList.add('filled');
+  s.innerHTML = `<span class="note-kr">${NOTES[noteIdx].kr}</span><span class="note-en">${NOTES[noteIdx].en}</span>`;
+}
+
+function revealSlots() {
+  for (let i = 0; i < noteCount; i++) {
+    const s = document.getElementById('slot' + i);
+    if (!s) continue;
+    const correct = answers[i] === targets[i];
+    s.classList.add(correct ? 'correct' : 'wrong');
+    s.innerHTML = `<span class="note-kr">${NOTES[targets[i]].kr}</span><span class="note-en">${NOTES[targets[i]].en}</span>`;
+  }
+}
+
+// ── Key flash helper ──────────────────────
+function flashKey(noteIdx, cls, duration = 400) {
+  const el = document.querySelector(`[data-note="${noteIdx}"]`);
+  if (!el) return;
+  el.classList.add(cls);
+  setTimeout(() => el.classList.remove(cls), duration);
+}
+
+// ── Game logic ────────────────────────────
+function newGame() {
+  targets = Array.from({length: noteCount}, () => Math.floor(Math.random() * 12));
+  answers = [];
+  replaysLeft = 1;
+  gameState = 'idle';
+
+  document.getElementById('replayBtn').disabled = true;
+  document.getElementById('replaysLeft').textContent = replaysLeft;
+  document.getElementById('playBtn').disabled = false;
+  document.getElementById('playBtn').textContent = '▶ 재생';
+  document.getElementById('playBtn').classList.remove('playing');
+  document.getElementById('resultZone').innerHTML = '';
+
+  // Reset all key classes
+  document.querySelectorAll('.wkey,.bkey').forEach(k => {
+    k.classList.remove('active','correct-flash','wrong-flash');
+  });
+
+  buildSlots();
+}
+
+function playNotes() {
+  if (gameState === 'playing') return;
+  gameState = 'playing';
+
+  const btn = document.getElementById('playBtn');
+  btn.disabled = true;
+  btn.classList.add('playing');
+  btn.textContent = '🎵 재생 중...';
+
+  playSequence(targets, () => {
+    gameState = 'answering';
+    btn.classList.remove('playing');
+    btn.textContent = '✅ 건반을 눌러 답하세요!';
+    document.getElementById('replayBtn').disabled = false;
+  });
+}
+
+function replayNotes() {
+  if (replaysLeft <= 0 || gameState !== 'answering') return;
+  replaysLeft--;
+  document.getElementById('replaysLeft').textContent = replaysLeft;
+  if (replaysLeft <= 0) document.getElementById('replayBtn').disabled = true;
+
+  playSequence(targets, null);
+}
+
+function onKeyClick(noteIdx) {
+  if (gameState !== 'answering') return;
+
+  flashKey(noteIdx, 'active', 200);
+
+  answers.push(noteIdx);
+  fillSlot(answers.length - 1, noteIdx);
+
+  // Check if done
+  if (answers.length >= noteCount) {
+    gameState = 'done';
+    setTimeout(finishGame, 300);
+  }
+}
+
+function finishGame() {
+  const correct = answers.filter((a, i) => a === targets[i]).length;
+  const score   = Math.round((correct / noteCount) * 100);
+
+  // Flash keys correct/wrong
+  answers.forEach((ans, i) => {
+    if (ans === targets[i]) flashKey(ans, 'correct-flash', 1200);
+    else {
+      flashKey(ans, 'wrong-flash', 1200);
+      flashKey(targets[i], 'correct-flash', 1200);
+    }
+  });
+
+  revealSlots();
+  showResult(score, correct);
+
+  document.getElementById('playBtn').textContent = '▶ 재생';
+  document.getElementById('playBtn').disabled = true;
+  document.getElementById('replayBtn').disabled = true;
+}
+
+function showResult(score, correct) {
+  const { cls, label } = rating(score);
+  const zone = document.getElementById('resultZone');
+  zone.innerHTML = `
+    <div class="result-box">
+      <div class="score-big ${cls}">${score}%</div>
+      <div class="score-label ${cls}">${label}</div>
+      <div class="score-detail">${correct}/${noteCount}개 정답</div>
+      <div class="btn-row">
+        <button class="btn-p" onclick="newGame()">🔄 다시 하기</button>
+      </div>
+    </div>`;
+}
+
+function rating(sc) {
+  if (sc >= 100) return { cls:'s',  label:'🌟 PERFECT!' };
+  if (sc >= 75)  return { cls:'a',  label:'✨ GREAT!' };
+  if (sc >= 50)  return { cls:'b',  label:'👍 GOOD' };
+  if (sc >= 25)  return { cls:'cc', label:'😅 TRY AGAIN' };
+  return              { cls:'d',  label:'💀 TERRIBLE' };
+}
+
+// ── Instrument selector ───────────────────
+document.getElementById('instrRow').addEventListener('click', e => {
+  const btn = e.target.closest('.tog-btn');
+  if (!btn) return;
+  instrument = btn.dataset.instr;
+  document.querySelectorAll('#instrRow .tog-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (gameState === 'idle' || gameState === 'done') newGame();
+});
+
+// ── Mode selector ─────────────────────────
+document.getElementById('modeRow').addEventListener('click', e => {
+  const btn = e.target.closest('.tog-btn');
+  if (!btn) return;
+  noteCount = parseInt(btn.dataset.count);
+  document.querySelectorAll('#modeRow .tog-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  newGame();
+});
+
+// ── Init ─────────────────────────────────
+buildKeyboard();
+newGame();
+</script>
+</body>
+</html>

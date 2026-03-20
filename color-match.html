@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>색 맞추기 | 도파민 게임</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080816; --surface: #0f0f28; --surface2: #181840;
+      --accent: #6c3aff; --cyan: #00d4ff; --pink: #ff3aac;
+      --gold: #ffd700; --text: #e8e8ff; --dim: #6060a0;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: 'Outfit','Noto Sans KR',sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; overflow-x: hidden;
+    }
+    body::before {
+      content:''; position:fixed; inset:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse at 20% 10%, rgba(108,58,255,.1) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 85%, rgba(0,212,255,.07) 0%, transparent 55%);
+    }
+
+    header { text-align:center; padding:2rem 1rem .5rem; position:relative; z-index:1; }
+    header h1 {
+      font-size: clamp(1.8rem,5vw,3rem); font-weight:900;
+      background: linear-gradient(135deg, var(--cyan), var(--accent), var(--pink));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    header p { color:var(--dim); font-size:.9rem; margin-top:.4rem; }
+
+    /* ── Round / Attempt indicator ── */
+    .meta {
+      display:flex; gap:1.5rem; margin:.8rem 0;
+      font-size:.85rem; color:var(--dim); position:relative; z-index:1;
+    }
+    .meta span b { color:var(--cyan); }
+
+    /* ── Main game area ── */
+    .game-area {
+      display:flex; gap:1.5rem; align-items:flex-start;
+      padding:0 1rem; position:relative; z-index:1;
+      flex-wrap:wrap; justify-content:center;
+    }
+
+    .panel { display:flex; flex-direction:column; align-items:center; gap:.6rem; }
+    .panel-label { font-size:.75rem; font-weight:700; color:var(--dim); letter-spacing:.08em; text-transform:uppercase; }
+
+    /* Target square */
+    .target-sq {
+      width:200px; height:200px; border-radius:16px;
+      border:2px solid rgba(255,255,255,.1);
+      box-shadow: 0 0 30px rgba(0,0,0,.5);
+      transition: background .3s;
+    }
+
+    /* Picker canvas wrap */
+    .picker-wrap {
+      position:relative; cursor:crosshair;
+      border-radius:14px; overflow:hidden;
+      border:2px solid rgba(108,58,255,.3);
+      box-shadow: 0 0 20px rgba(108,58,255,.2);
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .picker-wrap:hover {
+      border-color:var(--cyan);
+      box-shadow: 0 0 24px rgba(0,212,255,.3);
+    }
+    #picker { display:block; }
+
+    /* Hover preview circle */
+    .hover-preview {
+      position:absolute; width:28px; height:28px;
+      border-radius:50%; border:3px solid #fff;
+      pointer-events:none; transform:translate(-50%,-50%);
+      box-shadow: 0 0 10px rgba(0,0,0,.6);
+      display:none; transition: background .05s;
+    }
+
+    /* ── Attempts ── */
+    .attempts-wrap {
+      margin:1.2rem 0 .5rem; position:relative; z-index:1;
+      display:flex; flex-direction:column; gap:.6rem;
+      width:min(440px, 100% - 2rem); padding:0 1rem;
+    }
+    .attempt-card {
+      display:flex; align-items:center; gap:.8rem;
+      background:var(--surface); border:1px solid rgba(255,255,255,.07);
+      border-radius:12px; padding:.6rem 1rem;
+      animation: slideIn .3s ease;
+    }
+    @keyframes slideIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+    .attempt-num { font-size:.75rem; color:var(--dim); min-width:1.6rem; font-weight:700; }
+    .attempt-swatch { width:36px; height:36px; border-radius:8px; border:1px solid rgba(255,255,255,.15); flex-shrink:0; }
+    .attempt-bar-wrap { flex:1; }
+    .attempt-bar-bg {
+      height:8px; background:rgba(255,255,255,.08); border-radius:4px; overflow:hidden;
+    }
+    .attempt-bar { height:100%; border-radius:4px; transition:width .6s ease; }
+    .attempt-pct { font-size:.95rem; font-weight:800; min-width:3.2rem; text-align:right; }
+    .attempt-label { font-size:.7rem; color:var(--dim); margin-top:.2rem; }
+
+    /* empty slot */
+    .attempt-empty {
+      display:flex; align-items:center; gap:.8rem;
+      background:var(--surface); border:1px dashed rgba(255,255,255,.08);
+      border-radius:12px; padding:.6rem 1rem; opacity:.4;
+    }
+    .attempt-empty-dot { width:36px; height:36px; border-radius:8px; background:rgba(255,255,255,.05); flex-shrink:0; }
+
+    /* ── Result ── */
+    .result-wrap {
+      text-align:center; margin:1rem 0 2rem;
+      position:relative; z-index:1;
+      animation: fadeUp .5s ease;
+    }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+    .result-score { font-size:clamp(3rem,10vw,5.5rem); font-weight:900; line-height:1; letter-spacing:-2px; }
+    .result-label { font-size:1.1rem; font-weight:800; margin-top:.2rem; }
+    .result-best { font-size:.8rem; color:var(--gold); margin:.4rem 0 1rem; min-height:1.2rem; }
+
+    .btn {
+      padding:.75rem 1.8rem; border:none; border-radius:12px;
+      font-family:inherit; font-size:.95rem; font-weight:700; cursor:pointer; transition:all .2s;
+    }
+    .btn-p {
+      background: linear-gradient(135deg, var(--accent), var(--pink)); color:#fff;
+      box-shadow: 0 4px 16px rgba(108,58,255,.35);
+    }
+    .btn-p:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(108,58,255,.45); }
+
+    /* score colors */
+    .s  { color: var(--gold); }
+    .a  { color: #00ff88; }
+    .b  { color: var(--cyan); }
+    .cc { color: #ff9500; }
+    .d  { color: #ff4444; }
+
+    footer { color:var(--dim); font-size:.72rem; padding:1rem; margin-top:auto; position:relative; z-index:1; }
+    /* AdSense 사이드바 */
+    .ad-sidebar { position:fixed; top:50%; transform:translateY(-50%); width:160px; z-index:10; }
+    .ad-left  { left:8px; }
+    .ad-right { right:8px; }
+    @media (max-width:1300px) { .ad-sidebar { display:none; } }
+  </style>
+  <!-- Google AdSense: pub-1363977997493751 로 교체 후 주석 해제 -->
+  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=pub-1363977997493751" crossorigin="anonymous"></script> -->
+  <script src="security.js"></script>
+</head>
+<body>
+<div class="ad-sidebar ad-left">
+  <ins class="adsbygoogle" style="display:block;width:160px;height:600px"
+    data-ad-client="pub-1363977997493751" data-ad-slot="XXXXXXXXXX"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+<div class="ad-sidebar ad-right">
+  <ins class="adsbygoogle" style="display:block;width:160px;height:600px"
+    data-ad-client="pub-1363977997493751" data-ad-slot="XXXXXXXXXX"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+
+<header>
+  <h1>🎨 색 맞추기</h1>
+  <p>왼쪽 색과 최대한 가까운 색을 오른쪽에서 클릭해서 고르세요! 기회는 2번.</p>
+</header>
+
+<div class="meta">
+  <span>라운드 <b id="roundNum">1</b></span>
+  <span>남은 시도 <b id="attemptsLeft">3</b>번</span>
+  <span>최고 <b id="bestDisplay">-</b></span>
+</div>
+
+<div class="game-area">
+  <!-- Target -->
+  <div class="panel">
+    <div class="panel-label">🎯 맞춰야 할 색</div>
+    <div class="target-sq" id="targetSq"></div>
+  </div>
+
+  <!-- Picker -->
+  <div class="panel">
+    <div class="panel-label">👆 색 고르기</div>
+    <div class="picker-wrap" id="pickerWrap">
+      <canvas id="picker" width="280" height="280"></canvas>
+      <div class="hover-preview" id="hoverPrev"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Attempt history -->
+<div class="attempts-wrap" id="attemptsWrap"></div>
+
+<!-- Result -->
+<div class="result-wrap" id="resultWrap" style="display:none">
+  <div class="result-score" id="resultScore"></div>
+  <div class="result-label" id="resultLabel"></div>
+  <div class="result-best" id="resultBest"></div>
+  <button class="btn btn-p" onclick="nextRound()">🎲 다음 색깔</button>
+</div>
+
+
+
+<script>
+// ── Config ───────────────────────────────
+const MAX_ATTEMPTS = 2;
+const SAT = 85;      // fixed saturation for picker & target
+const L_MIN = 28, L_MAX = 72;  // lightness range
+
+// ── State ────────────────────────────────
+let target = null;          // { h, s, l }
+let attempts = [];          // array of { color, score }
+let round = 1;
+let best = parseInt(localStorage.getItem('cm_best') || '0');
+let done = false;
+
+// ── Elements ─────────────────────────────
+const targetSq   = document.getElementById('targetSq');
+const pickerEl   = document.getElementById('picker');
+const pickerCtx  = pickerEl.getContext('2d');
+const hoverPrev  = document.getElementById('hoverPrev');
+const pickerWrap = document.getElementById('pickerWrap');
+const attWrap    = document.getElementById('attemptsWrap');
+const resultWrap = document.getElementById('resultWrap');
+const resultScore= document.getElementById('resultScore');
+const resultLabel= document.getElementById('resultLabel');
+const resultBest = document.getElementById('resultBest');
+const roundNum   = document.getElementById('roundNum');
+const attLeft    = document.getElementById('attemptsLeft');
+const bestDisp   = document.getElementById('bestDisplay');
+
+// ── Colour helpers ────────────────────────
+function hslToRgb(h, s, l) {
+  s /= 100; l /= 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n, k = (n + h / 30) % 12) =>
+    l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+  return [Math.round(f(0)*255), Math.round(f(8)*255), Math.round(f(4)*255)];
+}
+function hslStr(h, s, l) { return `hsl(${h},${s}%,${l}%)`; }
+
+function colorDist(c1, c2) {
+  const [r1,g1,b1] = hslToRgb(c1.h, c1.s, c1.l);
+  const [r2,g2,b2] = hslToRgb(c2.h, c2.s, c2.l);
+  return Math.sqrt((r1-r2)**2 + (g1-g2)**2 + (b1-b2)**2);
+}
+
+// Max RGB distance in our S=85%, L=28-72% space ≈ 320
+const MAX_DIST = 320;
+
+function distToScore(dist) {
+  return Math.max(0, Math.round(100 - (dist / MAX_DIST) * 100 * 1.1));
+}
+
+function rating(sc) {
+  if (sc >= 93) return { cls:'s',  label:'🌟 PERFECT' };
+  if (sc >= 78) return { cls:'a',  label:'✨ GREAT' };
+  if (sc >= 60) return { cls:'b',  label:'👍 GOOD' };
+  if (sc >= 40) return { cls:'cc', label:'😅 CLOSE' };
+  return            { cls:'d',  label:'💀 MISSED' };
+}
+
+// ── Picker canvas ─────────────────────────
+function drawPicker() {
+  const w = pickerEl.width, h = pickerEl.height;
+  const img = pickerCtx.createImageData(w, h);
+  for (let y = 0; y < h; y++) {
+    const l = L_MAX - (y / h) * (L_MAX - L_MIN);
+    for (let x = 0; x < w; x++) {
+      const hue = (x / w) * 360;
+      const [r, g, b] = hslToRgb(hue, SAT, l);
+      const i = (y * w + x) * 4;
+      img.data[i]   = r;
+      img.data[i+1] = g;
+      img.data[i+2] = b;
+      img.data[i+3] = 255;
+    }
+  }
+  pickerCtx.putImageData(img, 0, 0);
+}
+
+function posToColor(x, y) {
+  const w = pickerEl.width, h = pickerEl.height;
+  const hue = Math.max(0, Math.min(359.9, (x / w) * 360));
+  const l   = L_MAX - (Math.max(0, Math.min(1, y / h))) * (L_MAX - L_MIN);
+  return { h: hue, s: SAT, l };
+}
+
+// ── Picker interaction ────────────────────
+pickerWrap.addEventListener('mousemove', e => {
+  if (done) return;
+  const r = pickerEl.getBoundingClientRect();
+  const x = e.clientX - r.left;
+  const y = e.clientY - r.top;
+  const c = posToColor(x * (pickerEl.width / r.width), y * (pickerEl.height / r.height));
+  hoverPrev.style.display = 'block';
+  hoverPrev.style.left = x + 'px';
+  hoverPrev.style.top  = y + 'px';
+  hoverPrev.style.background = hslStr(c.h, c.s, c.l);
+});
+
+pickerWrap.addEventListener('mouseleave', () => {
+  hoverPrev.style.display = 'none';
+});
+
+pickerWrap.addEventListener('click', e => {
+  if (done) return;
+  const r = pickerEl.getBoundingClientRect();
+  const x = (e.clientX - r.left) * (pickerEl.width / r.width);
+  const y = (e.clientY - r.top)  * (pickerEl.height / r.height);
+  const picked = posToColor(x, y);
+  submitAttempt(picked);
+});
+
+// touch support
+pickerWrap.addEventListener('touchend', e => {
+  if (done) return;
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  const r = pickerEl.getBoundingClientRect();
+  const x = (t.clientX - r.left) * (pickerEl.width / r.width);
+  const y = (t.clientY - r.top)  * (pickerEl.height / r.height);
+  submitAttempt(posToColor(x, y));
+}, { passive: false });
+
+// ── Game logic ────────────────────────────
+function submitAttempt(picked) {
+  if (attempts.length >= MAX_ATTEMPTS || done) return;
+  const dist  = colorDist(target, picked);
+  const score = distToScore(dist);
+  attempts.push({ color: picked, score });
+  renderAttempts();
+  if (attempts.length >= MAX_ATTEMPTS) finishRound();
+}
+
+function finishRound() {
+  done = true;
+  hoverPrev.style.display = 'none';
+  const best_score = Math.max(...attempts.map(a => a.score));
+
+  // Update best
+  if (best_score > best) {
+    best = best_score;
+    localStorage.setItem('cm_best', best);
+  }
+  updateMeta();
+
+  // Show result
+  const { cls, label } = rating(best_score);
+  resultScore.textContent = best_score + '%';
+  resultScore.className = 'result-score ' + cls;
+  resultLabel.textContent = label;
+  resultLabel.className = 'result-label ' + cls;
+  resultBest.textContent = best_score >= best ? '🏆 새 최고 기록!' : `최고 기록: ${best}%`;
+  resultWrap.style.display = 'block';
+
+  // Reveal target hint on picker
+  drawTargetPin();
+}
+
+function drawTargetPin() {
+  // Draw a cross on the picker where the target color is
+  const w = pickerEl.width, h = pickerEl.height;
+  const x = (target.h / 360) * w;
+  const y = ((L_MAX - target.l) / (L_MAX - L_MIN)) * h;
+  pickerCtx.save();
+  pickerCtx.strokeStyle = '#fff';
+  pickerCtx.lineWidth = 2;
+  pickerCtx.shadowColor = '#000';
+  pickerCtx.shadowBlur = 4;
+  // Cross
+  pickerCtx.beginPath();
+  pickerCtx.moveTo(x - 10, y); pickerCtx.lineTo(x + 10, y);
+  pickerCtx.moveTo(x, y - 10); pickerCtx.lineTo(x, y + 10);
+  pickerCtx.stroke();
+  // Circle
+  pickerCtx.beginPath();
+  pickerCtx.arc(x, y, 12, 0, Math.PI * 2);
+  pickerCtx.stroke();
+  pickerCtx.restore();
+}
+
+// ── Render attempts list ──────────────────
+function renderAttempts() {
+  attWrap.innerHTML = '';
+
+  // Filled attempts
+  attempts.forEach((a, i) => {
+    const { cls } = rating(a.score);
+    const card = document.createElement('div');
+    card.className = 'attempt-card';
+    card.innerHTML = `
+      <span class="attempt-num">#${i+1}</span>
+      <div class="attempt-swatch" style="background:${hslStr(a.color.h,a.color.s,a.color.l)}"></div>
+      <div class="attempt-bar-wrap">
+        <div class="attempt-bar-bg">
+          <div class="attempt-bar ${cls}" style="width:0%;background:currentColor;" id="bar${i}"></div>
+        </div>
+        <div class="attempt-label">${ratingWord(a.score)}</div>
+      </div>
+      <span class="attempt-pct ${cls}">${a.score}%</span>
+    `;
+    attWrap.appendChild(card);
+    // Animate bar
+    setTimeout(() => {
+      const bar = document.getElementById('bar' + i);
+      if (bar) bar.style.width = a.score + '%';
+    }, 50);
+  });
+
+  // Empty slots
+  for (let i = attempts.length; i < MAX_ATTEMPTS; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'attempt-empty';
+    slot.innerHTML = `
+      <span class="attempt-num" style="color:var(--dim)">#${i+1}</span>
+      <div class="attempt-empty-dot"></div>
+      <div style="flex:1;height:8px;background:rgba(255,255,255,.05);border-radius:4px"></div>
+    `;
+    attWrap.appendChild(slot);
+  }
+}
+
+function ratingWord(sc) {
+  if (sc >= 93) return '완벽!';
+  if (sc >= 78) return '훌륭!';
+  if (sc >= 60) return '좋음';
+  if (sc >= 40) return '아쉬움';
+  return '완전 빗나감';
+}
+
+// ── Round management ──────────────────────
+function newRound() {
+  target = {
+    h: Math.random() * 360,
+    s: SAT,
+    l: L_MIN + Math.random() * (L_MAX - L_MIN),
+  };
+  attempts = [];
+  done = false;
+
+  targetSq.style.background = hslStr(target.h, target.s, target.l);
+  resultWrap.style.display = 'none';
+  drawPicker();
+  renderAttempts();
+  updateMeta();
+}
+
+function nextRound() {
+  round++;
+  newRound();
+}
+
+function updateMeta() {
+  roundNum.textContent = round;
+  attLeft.textContent  = MAX_ATTEMPTS - attempts.length;
+  bestDisp.textContent = best > 0 ? best + '%' : '-';
+}
+
+// ── Init ─────────────────────────────────
+updateMeta();
+newRound();
+</script>
+</body>
+</html>
