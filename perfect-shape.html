@@ -332,11 +332,10 @@
 
 <div class="btns" id="btns">
   <button class="btn btn-p" onclick="resetAll()">🔄 다시 그리기</button>
-  <button class="btn btn-s" onclick="share()">📋 공유하기</button>
 </div>
 
 <div class="lb-section">
-  <div class="lb-warning">⚠️ <b>정정당당한 승부!</b><br>클라이언트 변조를 통한 비정상적인 스코어 조작은 스트리머와 시청자 모두의 재미를 반감시킵니다. 양심적인 플레이를 부탁드립니다.</div>
+  <div class="lb-warning">⚠️ <b>정정당당한 승부!</b><br>클라이언트 변조를 통한 비정상적인 스코어 조작은 모든 참여자의 재미를 반감시킵니다. 양심적인 플레이를 부탁드립니다.</div>
   <div class="lb-header"><h2>🏆 오늘의 TOP 10</h2></div>
   <div class="lb-tabs" id="lbTabs">
     <button class="lb-tab active" data-cat="circle">원</button>
@@ -679,11 +678,9 @@ function showScore(result) {
     if (!window.dbAPI) return;
     const isTop = await window.dbAPI.isTop10('perfect-shape', cur, sc, 'desc');
     if (isTop) {
-      const name = prompt("🎉 오늘의 TOP 10 달성! 닉네임을 입력하세요 (최대 10자):", "");
-      if (name && name.trim()) {
-         await window.dbAPI.saveScore('perfect-shape', cur, name.trim().slice(0,10), sc, `${sc}%`);
-         if (currentLbCat === cur) loadLeaderboard(cur);
-      }
+      const name = window.dbAPI.getGuestId();
+      await window.dbAPI.saveScore('perfect-shape', cur, name, sc, `${sc}%`);
+      if (currentLbCat === cur) loadLeaderboard(cur);
     }
   }, 500);
 }

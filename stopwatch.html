@@ -218,7 +218,7 @@
 <div class="lb-section">
   <div class="lb-warning">
     ⚠️ <b>정정당당한 승부!</b><br>
-    클라이언트 변조를 통한 비정상적인 스코어 조작은 스트리머와 시청자 모두의 재미를 반감시킵니다. 양심적인 플레이를 부탁드립니다.
+    클라이언트 변조를 통한 비정상적인 스코어 조작은 모든 참여자의 재미를 반감시킵니다. 양심적인 플레이를 부탁드립니다.
   </div>
   <div class="lb-header"><h2>🏆 오늘의 TOP 10</h2></div>
   <div class="lb-tabs" id="lbTabs">
@@ -407,11 +407,9 @@ function showResult(elapsed) {
       if (!window.dbAPI) return;
       const isTop = await window.dbAPI.isTop10('stopwatch', cat, diff, 'asc');
       if (isTop) {
-        const name = prompt("🎉 오늘의 TOP 10 달성! 닉네임을 입력하세요 (최대 10자):", "");
-        if (name && name.trim()) {
-           await window.dbAPI.saveScore('stopwatch', cat, name.trim().slice(0,10), diff, `${diff.toFixed(3)}s`);
-           if (currentLbCat === cat) loadLeaderboard(cat);
-        }
+        const name = window.dbAPI.getGuestId();
+        await window.dbAPI.saveScore('stopwatch', cat, name, diff, `${diff.toFixed(3)}s`);
+        if (currentLbCat === cat) loadLeaderboard(cat);
       }
     }, 500);
   }

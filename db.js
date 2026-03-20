@@ -26,6 +26,18 @@ function getTodayStr() {
   return `${y}-${m}-${dd}`;
 }
 
+// 같은 기기에서 항상 동일한 게스트 ID 반환 (localStorage 기반)
+function getGuestId() {
+  const KEY = 'sf_guest_id';
+  let id = localStorage.getItem(KEY);
+  if (!id) {
+    const num = Math.floor(10000 + Math.random() * 90000); // 5자리 랜덤
+    id = `Guest-${num}`;
+    localStorage.setItem(KEY, id);
+  }
+  return id;
+}
+
 // 1. 과거 스코어 초기화 (오늘 날짜가 아닌 폴더 삭제)
 async function cleanupOldData() {
   try {
@@ -100,7 +112,8 @@ async function isTop10(gameId, category, myScore, order = 'desc') {
 window.dbAPI = {
   getTop10,
   saveScore,
-  isTop10
+  isTop10,
+  getGuestId
 };
 
 // 페이지 로드 시 백그라운드에서 하루 전 데이터 정리 수행
