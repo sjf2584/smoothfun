@@ -329,6 +329,7 @@ let targets    = [];      // array of note indices (0-11)
 let answers    = [];      // array of filled answers
 let replaysLeft = 1;
 let gameState  = 'idle';  // idle | playing | answering | done
+let currentStreak = 0;
 let audioCtx   = null;
 
 // ── Audio ─────────────────────────────────
@@ -496,7 +497,8 @@ function flashKey(noteIdx, cls, duration = 400) {
 }
 
 // ── Game logic ────────────────────────────
-function newGame() {
+function newGame(isNextRound = false) {
+  if (!isNextRound) currentStreak = 0;
   targets = Array.from({length: noteCount}, () => Math.floor(Math.random() * 12));
   answers = [];
   replaysLeft = 1;
@@ -560,7 +562,7 @@ function onKeyClick(noteIdx) {
 
 function finishGame() {
   const correct = answers.filter((a, i) => a === targets[i]).length;
-  const score   = Math.round((correct / noteCount) * 100);
+  const isPerfect = (correct === noteCount);
 
   // Flash keys correct/wrong
   answers.forEach((ans, i) => {
@@ -572,37 +574,56 @@ function finishGame() {
   });
 
   revealSlots();
-  showResult(score, correct);
+  
+  if (isPerfect) {
+    currentStreak++;
+    showResult(true, correct);
+  } else {
+    showResult(false, correct);
+  }
 
   document.getElementById('playBtn').textContent = '▶ 재생';
   document.getElementById('playBtn').disabled = true;
   document.getElementById('replayBtn').disabled = true;
 }
 
-function showResult(score, correct) {
-  const { cls, label } = rating(score);
+function showResult(isPerfect, correct) {
   const zone = document.getElementById('resultZone');
-  zone.innerHTML = `
-    <div class="result-box">
-      <div class="score-big ${cls}">${score}%</div>
-      <div class="score-label ${cls}">${label}</div>
-      <div class="score-detail">${correct}/${noteCount}개 정답</div>
-      <div class="btn-row">
-        <button class="btn-p" onclick="newGame()">🔄 다시 하기</button>
-      </div>
-    </div>`;
-
-  // Save to DB
-  const cat = `note_${noteCount}`;
-  setTimeout(async () => {
-    if (!window.dbAPI) return;
-    const isTop = await window.dbAPI.isTop10('pitch', cat, score, 'desc');
-    if (isTop) {
-      const name = window.dbAPI.getGuestId();
-      await window.dbAPI.saveScore('pitch', cat, name, score, `${score}% (${correct}/${noteCount})`);
-      if (currentLbCat === cat) loadLeaderboard(cat);
+  
+  if (isPerfect) {
+    zone.innerHTML = `
+      <div class="result-box">
+        <div class="score-label" style="color:var(--green);font-size:1.5rem">🎉 완벽합니다!</div>
+        <div class="score-detail">현재 연속 정답: <b>${currentStreak}회</b></div>
+        <div class="btn-row">
+          <button class="btn-p" onclick="newGame(true)">▶ 다음 라운드</button>
+        </div>
+      </div>`;
+  } else {
+    zone.innerHTML = `
+      <div class="result-box">
+        <div class="score-label" style="color:var(--red);font-size:1.5rem">😢 틀렸습니다!</div>
+        <div class="score-detail">최종 연속 정답: <b>${currentStreak}회</b><br><span style="font-size:0.8rem">${correct}/${noteCount}개 맞춤</span></div>
+        <div class="btn-row">
+          <button class="btn-p" onclick="newGame(false)">🔄 처음부터 다시</button>
+        </div>
+      </div>`;
+      
+    // Save to DB (Only on fail, effectively saving the broken streak)
+    if (currentStreak > 0) {
+      const cat = `note_${noteCount}`;
+      const finalStreak = currentStreak; // Capture current streak before it might be reset
+      setTimeout(async () => {
+        if (!window.dbAPI) return;
+        const isTop = await window.dbAPI.isTop10('pitch', cat, finalStreak, 'desc');
+        if (isTop) {
+          const name = window.dbAPI.getGuestId();
+          await window.dbAPI.saveScore('pitch', cat, name, finalStreak, `${finalStreak}연속 정답`);
+          if (currentLbCat === cat) loadLeaderboard(cat);
+        }
+      }, 500);
     }
-  }, 500);
+  }
 }
 
 function rating(sc) {
