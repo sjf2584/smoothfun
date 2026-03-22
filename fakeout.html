@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>기다려... 가짜 신호 참기 | 스무스펀</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#080816; --surface:#0f0f28; --surface2:#181840;
+      --accent:#6c3aff; --cyan:#00d4ff; --pink:#ff3aac;
+      --gold:#ffd700; --text:#e8e8ff; --dim:#6060a0;
+      --green:#00ff88; --red:#ff4444; 
+      --fake-blue:#2b8cff; --fake-purple:#a64aff;
+    }
+    :root[data-theme="light"] {
+      --bg:#f0f2ff; --surface:#ffffff; --surface2:#e8eaff;
+      --accent:#5b2de0; --cyan:#0099cc; --pink:#cc2299;
+      --gold:#b8860b; --text:#1a1a3a; --dim:#8080b0;
+      --green:#00aa55; --red:#cc2222;
+      --fake-blue:#3a7bd5; --fake-purple:#8e2de2;
+    }
+    :root[data-theme="light"] body::before { background:none; }
+    
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family:'Outfit','Noto Sans KR',sans-serif;
+      background:var(--bg); color:var(--text);
+      min-height:100vh; overflow-x:hidden; transition: background 0.1s;
+    }
+    body::before {
+      content:''; position:fixed; inset:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse at 50% 10%, rgba(255,215,0,.1) 0%, transparent 60%),
+        radial-gradient(ellipse at 50% 90%, rgba(255,58,172,.05) 0%, transparent 60%);
+      z-index: 0;
+    }
+
+    /* ── Header ── */
+    header { text-align:center; padding:4.5rem 1rem .5rem; z-index:1; position:relative; }
+    header h1 {
+      font-size:clamp(1.8rem,5vw,3rem); font-weight:900; line-height:1.2;
+      background:linear-gradient(135deg,var(--gold),var(--pink));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    header p { color:var(--dim); font-size:.9rem; margin-top:.4rem; }
+
+    .btn-home {
+      display: inline-block; position: absolute; left: 1rem; top: 1rem;
+      padding: .4rem .8rem; border-radius: 8px; font-size: .8rem; font-weight: 700;
+      color: var(--gold); text-decoration: none; border: 1px solid rgba(255,215,0,.3);
+      transition: all .2s;
+    }
+    .btn-home:hover { background: rgba(255,215,0,.1); }
+
+    /* ── Game Info ── */
+    .info-bar {
+      display:flex; justify-content:center; gap:2rem; margin:1rem 0;
+      font-size:1.4rem; font-weight:800; font-family:'Outfit',sans-serif;
+      z-index:1; position:relative;
+    }
+    .info-item { display:flex; flex-direction:column; align-items:center; }
+    .info-label { font-size:.7rem; color:var(--dim); letter-spacing:1px; text-transform:uppercase; margin-bottom:.2rem; }
+    .info-val { color:var(--gold); font-variant-numeric:tabular-nums; }
+    
+    .rounds-wrap {
+      display: flex; gap: 4px; align-items: center; justify-content: center; margin-bottom: 2rem; z-index: 1; position: relative;
+    }
+    .round-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--surface2); border: 2px solid rgba(255,255,255,.1); transition: all .3s; }
+    .round-dot.active { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 10px var(--gold); }
+    .round-dot.failed { background: var(--red); border-color: var(--red); box-shadow: 0 0 10px var(--red); }
+
+    /* ── Game Area ── */
+    .game-wrap {
+      width: min(100%, 600px); aspect-ratio: 4/3; margin: 0 auto;
+      position:relative; z-index:1; perspective: 1000px;
+    }
+    
+    .reaction-btn {
+      width: 100%; height: 100%;
+      background: var(--surface); border: 4px solid var(--surface2);
+      border-radius: 24px; box-shadow: 0 10px 40px rgba(0,0,0,.5);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer; user-select: none; transition: transform 0.1s, background 0.1s, border-color 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .reaction-btn:active { transform: scale(0.96); }
+    
+    .btn-icon { font-size: 4rem; margin-bottom: 1rem; filter: grayscale(1); transition: filter 0.2s; }
+    .btn-text { font-size: 2rem; font-weight: 900; color: var(--dim); letter-spacing: -1px; text-align: center; }
+    .btn-sub { font-size: 1rem; color: var(--dim); margin-top: 0.5rem; font-weight: 400; opacity: 0.6; }
+
+    /* States */
+    /* 1. Wait */
+    .state-wait { background: var(--surface); border-color: var(--surface2); }
+    .state-wait .btn-text { color: var(--text); }
+    
+    /* 2. Fakeout (Red) */
+    .state-fake-red { background: rgba(255,68,68,.1); border-color: var(--red); animation: shakeX .2s; }
+    .state-fake-red .btn-text { color: var(--red); }
+    .state-fake-red .btn-icon { filter: grayscale(0) hue-rotate(-50deg); } /* approx red tint */
+
+    /* 3. Fakeout (Blue) */
+    .state-fake-blue { background: rgba(43,140,255,.1); border-color: var(--fake-blue); animation: shakeY .2s; }
+    .state-fake-blue .btn-text { color: var(--fake-blue); }
+
+    /* 4. Gold (GO!) */
+    .state-go { background: var(--gold); border-color: #fff; box-shadow: 0 0 50px rgba(255,215,0,.6); }
+    .state-go .btn-text { color: #000; font-size: 3.5rem; letter-spacing: 2px; }
+    .state-go .btn-sub { color: rgba(0,0,0,.7); font-weight: 700; }
+    .state-go .btn-icon { filter: none; transform: scale(1.2); }
+
+    /* 5. Result/Early */
+    .state-fail { background: rgba(255,68,68,.2); border-color: var(--red); }
+    .state-fail .btn-text { color: #ffaaaa; }
+
+    @keyframes shakeX {
+      0%,100%{transform:translateX(0);} 25%{transform:translateX(-10px);} 75%{transform:translateX(10px);}
+    }
+    @keyframes shakeY {
+      0%,100%{transform:translateY(0);} 25%{transform:translateY(-10px);} 75%{transform:translateY(10px);}
+    }
+
+    /* ── Leaderboard ── */
+    .lb-section {
+      width:min(600px, 100% - 2rem); margin: 3rem auto 2rem;
+      background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08);
+      border-radius:16px; padding:1.5rem; position:relative; z-index:1;
+    }
+    .lb-warning {
+      background:rgba(255,68,68,.1); border:1px solid rgba(255,68,68,.3);
+      color:#ffaaaa; font-size:.75rem; padding:.8rem; border-radius:8px;
+      margin-bottom:1.5rem; line-height:1.4; text-align:center; word-break:keep-all;
+    }
+    .lb-header { text-align:center; margin-bottom:1rem; }
+    .lb-header h2 { font-size:1.4rem; color:var(--gold); display:flex; align-items:center; justify-content:center; gap:.5rem; }
+    .lb-tabs { display:flex; gap:.4rem; justify-content:center; margin-bottom:1rem; flex-wrap:wrap; }
+    .lb-tab {
+      background:transparent; border:1px solid rgba(255,255,255,.2); color:var(--dim);
+      padding:.3rem .8rem; border-radius:20px; font-size:.75rem; cursor:pointer; font-family:inherit; transition:all .2s;
+    }
+    .lb-tab.active { background:var(--gold); color:#000; border-color:var(--gold); font-weight:800; }
+    .lb-list { display:flex; flex-direction:column; gap:.4rem; min-height:150px; }
+    .lb-item {
+      display:flex; align-items:center; background:rgba(0,0,0,.3); padding:.6rem 1rem;
+      border-radius:10px; font-size:.9rem;
+    }
+    .lb-item.empty { justify-content:center; color:var(--dim); font-size:.8rem; font-style:italic; }
+    .lb-rank { width:24px; font-weight:900; color:var(--dim); }
+    .lb-item:nth-child(1) .lb-rank { color:var(--gold); }
+    .lb-item:nth-child(2) .lb-rank { color:#c0c0c0; }
+    .lb-item:nth-child(3) .lb-rank { color:#cd7f32; }
+    .lb-name { flex:1; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:1rem; }
+    .lb-score { font-family:monospace; font-size:.95rem; color:var(--cyan); font-weight:700; }
+
+    /* AdSense 사이드바 */
+    .ad-sidebar { position:fixed; top:50%; transform:translateY(-50%); width:160px; z-index:10; }
+    .ad-left  { left:8px; }
+    .ad-right { right:8px; }
+    @media (max-width:1300px) { .ad-sidebar { display:none; } }
+  </style>
+  <!-- Google AdSense: pub-1363977997493751 로 교체 후 주석 해제 -->
+  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=pub-1363977997493751" crossorigin="anonymous"></script> -->
+  <script src="security.js"></script>
+  <script src="theme.js"></script>
+  <script type="module" src="db.js"></script>
+</head>
+<body>
+
+<div class="ad-sidebar ad-left">
+  <ins class="adsbygoogle" style="display:block;width:160px;height:600px"
+    data-ad-client="pub-1363977997493751" data-ad-slot="XXXXXXXXXX"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+<div class="ad-sidebar ad-right">
+  <ins class="adsbygoogle" style="display:block;width:160px;height:600px"
+    data-ad-client="pub-1363977997493751" data-ad-slot="XXXXXXXXXX"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+
+<header>
+  <a href="index.html" class="btn-home">← 홈으로</a>
+  <h1>🤬 가짜 신호 참기</h1>
+  <p>황금색 "지금!" 타이밍에만 누르세요! 낚이면 즉시 탈락!</p>
+</header>
+
+<div class="rounds-wrap" id="roundsDots">
+  <div class="round-dot" id="dot-1"></div>
+  <div class="round-dot" id="dot-2"></div>
+  <div class="round-dot" id="dot-3"></div>
+  <div class="round-dot" id="dot-4"></div>
+  <div class="round-dot" id="dot-5"></div>
+</div>
+
+<div class="info-bar">
+  <div class="info-item">
+    <div class="info-label">LAST RECORD</div>
+    <div class="info-val" id="lastDisp">0 ms</div>
+  </div>
+  <div class="info-item">
+    <div class="info-label">AVERAGE</div>
+    <div class="info-val" id="avgDisp">0 ms</div>
+  </div>
+</div>
+
+<div class="game-wrap">
+  <div class="reaction-btn state-wait" id="rBtn">
+    <div class="btn-icon">💤</div>
+    <div class="btn-text">여기를 눌러서 시작!</div>
+    <div class="btn-sub"></div>
+  </div>
+</div>
+
+<div class="lb-section">
+  <div class="lb-warning">⚠️ <b>정정당당한 승부!</b><br>클라이언트 변조를 통한 비정상적인 스코어 조작은 모든 참여자의 재미를 반감시킵니다. 양심적인 플레이를 부탁드립니다.</div>
+  <div class="lb-header"><h2>🏆 오늘의 TOP 10</h2></div>
+  <div class="lb-tabs" id="lbTabs">
+    <button class="lb-tab active" data-cat="all">통합 랭킹</button>
+  </div>
+  <div class="lb-list" id="lbList"><div class="lb-item empty">랭킹 불러오는 중...</div></div>
+</div>
+
+<script>
+// --- Game State Constants ---
+const STATE_IDLE = 'idle'; // Before start or game over
+const STATE_WAITING = 'waiting'; // Waiting for signal (red or gold)
+const STATE_FAKEOUT = 'fakeout'; // Currently showing fakeout
+const STATE_GOLD = 'gold'; // GO!
+const STATE_RESULT = 'result'; // Between rounds
+
+let currentState = STATE_IDLE;
+let currentRound = 1;
+let times = [];
+
+// Timers
+let phaseTimer = null;
+let fakeTimer = null;
+let goldStartTime = 0;
+let remainingFakes = 0; 
+
+const btn = document.getElementById('rBtn');
+const btnIcon = document.querySelector('.btn-icon');
+const btnText = document.querySelector('.btn-text');
+const btnSub = document.querySelector('.btn-sub');
+const dotEls = [
+  document.getElementById('dot-1'),
+  document.getElementById('dot-2'),
+  document.getElementById('dot-3'),
+  document.getElementById('dot-4'),
+  document.getElementById('dot-5')
+];
+const lastDisp = document.getElementById('lastDisp');
+const avgDisp = document.getElementById('avgDisp');
+
+// --- Visual Updates ---
+function setUIState(stateClass, icon, text, sub) {
+  btn.className = 'reaction-btn ' + stateClass;
+  btnIcon.textContent = icon;
+  btnText.innerHTML = text;
+  btnSub.innerHTML = sub;
+}
+
+function updateDots() {
+  dotEls.forEach((dot, idx) => {
+    dot.className = 'round-dot';
+    if (idx < currentRound - 1) dot.classList.add('active'); // completed
+    if (idx === currentRound - 1 && currentState !== STATE_IDLE) dot.classList.add('active'); // pulsing/current? 
+  });
+}
+
+function calcAvg() {
+  if (times.length === 0) return 0;
+  const sum = times.reduce((a, b) => a + b, 0);
+  return (sum / times.length).toFixed(0);
+}
+
+// --- Logic ---
+function resetAll() {
+  currentRound = 1;
+  times = [];
+  lastDisp.textContent = '0 ms';
+  avgDisp.textContent = '0 ms';
+  dotEls.forEach(d => d.className = 'round-dot');
+}
+
+function startRound() {
+  currentState = STATE_WAITING;
+  updateDots();
+  setUIState('state-wait', '💤', '기다려...', '아직 누르지 마세요!');
+  
+  // Decide how many fakes this round (0 to 2)
+  remainingFakes = Math.random() < 0.3 ? 0 : (Math.random() < 0.6 ? 1 : 2);
+  
+  scheduleNextEvent();
+}
+
+function scheduleNextEvent() {
+  // Random wait between 1.5s to 3.5s
+  const waitMs = 1500 + Math.random() * 2000;
+  
+  clearTimeout(phaseTimer);
+  phaseTimer = setTimeout(() => {
+    if (remainingFakes > 0) {
+      triggerFakeout();
+    } else {
+      triggerGold();
+    }
+  }, waitMs);
+}
+
+function triggerFakeout() {
+  currentState = STATE_FAKEOUT;
+  remainingFakes--;
+  
+  const fakes = [
+    { cls: 'state-fake-red', icon: '🚨', text: '누르지 마!', sub: '이건 가짜야!' },
+    { cls: 'state-fake-blue', icon: '⚠️', text: '지금... 아님!', sub: '낚이지 마세요 ㅋㅋ' },
+    { cls: 'state-fake-red', icon: '💥', text: '빨리 눌러!!!', sub: '...라고 할 줄 알았지?' }
+  ];
+  const pick = fakes[Math.floor(Math.random() * fakes.length)];
+  
+  setUIState(pick.cls, pick.icon, pick.text, pick.sub);
+  
+  // Fake lasts for 400ms to 800ms
+  const fakeDur = 400 + Math.random() * 400;
+  
+  clearTimeout(fakeTimer);
+  fakeTimer = setTimeout(() => {
+    // Return to waiting
+    currentState = STATE_WAITING;
+    setUIState('state-wait', '💤', '휴...', '다시 기다려주세요');
+    scheduleNextEvent();
+  }, fakeDur);
+}
+
+function triggerGold() {
+  currentState = STATE_GOLD;
+  setUIState('state-go', '⚡', '지금!!!', '최대한 빨리 누르세요!');
+  goldStartTime = performance.now();
+  
+  // Background flash effect via JS if needed, but CSS handles it
+}
+
+function processTap() {
+  if (currentState === STATE_IDLE || currentState === STATE_RESULT) {
+    if (currentRound > 5 || currentState === STATE_IDLE) {
+      resetAll();
+    }
+    startRound();
+    return;
+  }
+  
+  // Tap during wait or fakeout = FAIL
+  if (currentState === STATE_WAITING || currentState === STATE_FAKEOUT) {
+    clearTimeout(phaseTimer);
+    clearTimeout(fakeTimer);
+    
+    currentState = STATE_RESULT;
+    const msg = currentState === STATE_FAKEOUT ? '낚이셨습니다 ㅋㅋㅋ' : '앗! 너무 빨리 눌렀어요!';
+    setUIState('state-fail', '💀', '탈락!', `${msg}<br><span style="font-size:1.2rem;opacity:.7">화면을 탭해서 처음부터 다시...</span>`);
+    
+    // Fail dot
+    dotEls[currentRound-1].classList.add('failed');
+    
+    currentRound = 6; // Force game over
+    return;
+  }
+  
+  // Tap on Gold = SUCCESS
+  if (currentState === STATE_GOLD) {
+    const reactTime = performance.now() - goldStartTime;
+    times.push(reactTime);
+    
+    lastDisp.textContent = reactTime.toFixed(0) + ' ms';
+    avgDisp.textContent = calcAvg() + ' ms';
+    
+    if (currentRound < 5) {
+      currentState = STATE_RESULT;
+      setUIState('state-wait', '✅', `라운드 ${currentRound} 통과!`, `${reactTime.toFixed(0)}ms<br>탭해서 다음 라운드 시작`);
+      currentRound++;
+    } else {
+      // Game Finish
+      currentState = STATE_RESULT;
+      const finalAvg = calcAvg();
+      setUIState('state-go', '🏆', '측정 완료!', `평균 <b>${finalAvg}ms</b><br><span style="font-size:1.1rem">탭해서 다시 하기</span>`);
+      
+      // Save Score
+      setTimeout(async () => {
+        if (!window.dbAPI) return;
+        const isTop = await window.dbAPI.isTop10('fakeout', 'all', Number(finalAvg), 'asc');
+        if (isTop) {
+          const name = window.dbAPI.getGuestId();
+          await window.dbAPI.saveScore('fakeout', 'all', name, Number(finalAvg), `${finalAvg}ms`);
+          loadLeaderboard();
+        }
+      }, 500);
+      
+      currentRound = 6; // Mark ended
+    }
+  }
+}
+
+// Setup events (prevent double tap zoom on mobile)
+btn.addEventListener('touchstart', (e) => { e.preventDefault(); processTap(); });
+btn.addEventListener('mousedown', (e) => { 
+  if(e.button === 0) processTap(); 
+});
+
+// ── Leaderboard Logic ─────────────────────
+function loadLeaderboard() {
+  const list = document.getElementById('lbList');
+  list.innerHTML = '<div class="lb-item empty">데이터를 불러오는 중...</div>';
+  
+  if (!window.dbAPI) { setTimeout(loadLeaderboard, 100); return; }
+  window.dbAPI.getTop10('fakeout', 'all', 'asc').then(data => {
+    if (!data || data.length === 0) { list.innerHTML = '<div class="lb-item empty">아직 기록이 없습니다. 첫 랭커가 되어보세요!</div>'; return; }
+    list.innerHTML = data.map((d, i) => `
+      <div class="lb-item">
+        <span class="lb-rank">${i+1}</span>
+        <span class="lb-name">${d.name}</span>
+        <span class="lb-score">${d.extraText}</span>
+      </div>`).join('');
+  });
+}
+loadLeaderboard();
+</script>
+</body>
+</html>
