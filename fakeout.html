@@ -238,6 +238,59 @@ let fakeTimer = null;
 let goldStartTime = 0;
 let remainingFakes = 0; 
 
+// --- Audio System ---
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function initAudio() {
+  if (!audioCtx) audioCtx = new AudioContext();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playSound(type) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  
+  const now = audioCtx.currentTime;
+  
+  if (type === 'fake') {
+    // Annoying low buzz
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, now);
+    osc.frequency.exponentialRampToValueAtTime(80, now + 0.15);
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+    osc.start(now); osc.stop(now + 0.15);
+  } else if (type === 'gold') {
+    // Sharp ding!
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1200, now);
+    osc.frequency.exponentialRampToValueAtTime(2000, now + 0.1);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    osc.start(now); osc.stop(now + 0.3);
+  } else if (type === 'fail') {
+    // Womp...
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(200, now);
+    osc.frequency.exponentialRampToValueAtTime(50, now + 0.4);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+    osc.start(now); osc.stop(now + 0.4);
+  } else if (type === 'pass') {
+    // Up blip
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(400, now);
+    osc.frequency.setValueAtTime(600, now + 0.1);
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.linearRampToValueAtTime(0, now + 0.2);
+    osc.start(now); osc.stop(now + 0.2);
+  }
+}
+
 const btn = document.getElementById('rBtn');
 const btnIcon = document.querySelector('.btn-icon');
 const btnText = document.querySelector('.btn-text');
@@ -284,19 +337,27 @@ function resetAll() {
 }
 
 function startRound() {
+  // Ensure audio is unlocked
+  initAudio();
+  
   currentState = STATE_WAITING;
   updateDots();
   setUIState('state-wait', '💤', '기다려...', '아직 누르지 마세요!');
   
-  // Decide how many fakes this round (0 to 2)
-  remainingFakes = Math.random() < 0.3 ? 0 : (Math.random() < 0.6 ? 1 : 2);
+  // Decide how many fakes this round (0 to 4, erratic)
+  const r = Math.random();
+  if (r < 0.2) remainingFakes = 0;
+  else if (r < 0.5) remainingFakes = 1;
+  else if (r < 0.8) remainingFakes = 2;
+  else if (r < 0.95) remainingFakes = 3;
+  else remainingFakes = 4;
   
   scheduleNextEvent();
 }
 
 function scheduleNextEvent() {
-  // Random wait between 1.5s to 3.5s
-  const waitMs = 1500 + Math.random() * 2000;
+  // Random wait between 0.4s to 2.5s (much faster tempo)
+  const waitMs = 400 + Math.random() * 2100;
   
   clearTimeout(phaseTimer);
   phaseTimer = setTimeout(() => {
@@ -320,9 +381,10 @@ function triggerFakeout() {
   const pick = fakes[Math.floor(Math.random() * fakes.length)];
   
   setUIState(pick.cls, pick.icon, pick.text, pick.sub);
+  playSound('fake');
   
-  // Fake lasts for 400ms to 800ms
-  const fakeDur = 400 + Math.random() * 400;
+  // Fake lasts for 150ms to 500ms (very jumpy)
+  const fakeDur = 150 + Math.random() * 350;
   
   clearTimeout(fakeTimer);
   fakeTimer = setTimeout(() => {
@@ -336,6 +398,7 @@ function triggerFakeout() {
 function triggerGold() {
   currentState = STATE_GOLD;
   setUIState('state-go', '⚡', '지금!!!', '최대한 빨리 누르세요!');
+  playSound('gold');
   goldStartTime = performance.now();
   
   // Background flash effect via JS if needed, but CSS handles it
@@ -358,6 +421,7 @@ function processTap() {
     currentState = STATE_RESULT;
     const msg = currentState === STATE_FAKEOUT ? '낚이셨습니다 ㅋㅋㅋ' : '앗! 너무 빨리 눌렀어요!';
     setUIState('state-fail', '💀', '탈락!', `${msg}<br><span style="font-size:1.2rem;opacity:.7">화면을 탭해서 처음부터 다시...</span>`);
+    playSound('fail');
     
     // Fail dot
     dotEls[currentRound-1].classList.add('failed');
@@ -377,6 +441,7 @@ function processTap() {
     if (currentRound < 5) {
       currentState = STATE_RESULT;
       setUIState('state-wait', '✅', `라운드 ${currentRound} 통과!`, `${reactTime.toFixed(0)}ms<br>탭해서 다음 라운드 시작`);
+      playSound('pass');
       currentRound++;
     } else {
       // Game Finish
