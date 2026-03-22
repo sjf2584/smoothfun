@@ -81,15 +81,33 @@ async function getTop10(gameId, category, order = 'desc') {
 }
 
 // 3. 기록 저장
-async function saveScore(gameId, category, name, score, extraText) {
+async function saveScore(gameId, category, name, score, extraText, order = 'desc') {
   try {
     const today = getTodayStr();
-    await push(ref(db, `leaderboard/${today}/${gameId}/${category}`), {
+    const catPath = `leaderboard/${today}/${gameId}/${category}`;
+    await push(ref(db, catPath), {
       name,
       score,
       extraText,
       timestamp: Date.now()
     });
+
+    // 11위 이하 데이터 즉시 삭제 (용량 및 쓸데없는 데이터 방지)
+    const snap = await get(ref(db, catPath));
+    if (snap.exists()) {
+      const data = snap.val();
+      let list = Object.keys(data).map(k => ({ id:k, ...data[k] }));
+      if (list.length > 10) {
+        if (order === 'desc') {
+          list.sort((a,b) => b.score - a.score || a.timestamp - b.timestamp);
+        } else {
+          list.sort((a,b) => a.score - b.score || a.timestamp - b.timestamp);
+        }
+        for (let i = 10; i < list.length; i++) {
+          await remove(ref(db, `${catPath}/${list[i].id}`));
+        }
+      }
+    }
   } catch(e) { console.error('[DB] saveScore error', e); }
 }
 

@@ -455,7 +455,7 @@ function processTap() {
         const isTop = await window.dbAPI.isTop10('fakeout', 'all', Number(finalAvg), 'asc');
         if (isTop) {
           const name = window.dbAPI.getGuestId();
-          await window.dbAPI.saveScore('fakeout', 'all', name, Number(finalAvg), `${finalAvg}ms`);
+          await window.dbAPI.saveScore('fakeout', 'all', name, Number(finalAvg), `${finalAvg}ms`, 'asc');
           loadLeaderboard();
         }
       }, 500);

@@ -427,7 +427,7 @@ function showResult(elapsed) {
       const isTop = await window.dbAPI.isTop10('stopwatch', cat, diff, 'asc');
       if (isTop) {
         const name = window.dbAPI.getGuestId();
-        await window.dbAPI.saveScore('stopwatch', cat, name, diff, `${diff.toFixed(3)}s`);
+        await window.dbAPI.saveScore('stopwatch', cat, name, diff, `${diff.toFixed(3)}s`, 'asc');
         if (currentLbCat === cat) loadLeaderboard(cat);
       }
     }, 500);
