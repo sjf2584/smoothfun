@@ -150,6 +150,7 @@
   <script src="security.js"></script>
   <script src="theme.js"></script>
   <script type="module" src="db.js"></script>
+  <script src="audio.js"></script>
 </head>
 <body>
 
@@ -269,6 +270,7 @@ function handleSqClick(e) {
   const num = parseInt(sq.dataset.num);
   
   if (num === expectedNum) {
+    if (window.sfAudio) window.sfAudio.play('tap');
     // Correct
     if (num === 1) {
       // Blind all others
@@ -287,6 +289,7 @@ function handleSqClick(e) {
     // Level clear
     if (expectedNum > currentLevel) {
       isPlaying = false;
+      if (window.sfAudio) window.sfAudio.play('pass');
       cancelAnimationFrame(reqId);
       totalTimeMs += (performance.now() - levelStartTime);
       timeDisp.textContent = (totalTimeMs / 1000).toFixed(2) + 's';
@@ -298,6 +301,7 @@ function handleSqClick(e) {
   } else {
     // Wrong!
     isPlaying = false;
+    if (window.sfAudio) window.sfAudio.play('fail');
     cancelAnimationFrame(reqId);
     totalTimeMs += (performance.now() - levelStartTime);
     sq.classList.remove('hidden');
@@ -321,6 +325,7 @@ function showOverlay(title, desc, btnText) {
 }
 
 function startGame() {
+  if (window.sfAudio) window.sfAudio.play('tap');
   overlayEl.classList.remove('show');
   expectedNum = 1;
   isBlind = false;

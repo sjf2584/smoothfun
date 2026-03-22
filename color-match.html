@@ -203,6 +203,7 @@
   <script src="security.js"></script>
   <script type="module" src="db.js"></script>
   <script src="theme.js"></script>
+  <script src="audio.js"></script>
 </head>
 <body>
 <div class="ad-sidebar ad-left">
@@ -390,6 +391,7 @@ pickerWrap.addEventListener('touchend', e => {
 // ── Game logic ────────────────────────────
 function submitAttempt(picked) {
   if (attempts.length >= MAX_ATTEMPTS || done) return;
+  if (window.sfAudio) window.sfAudio.play('tap');
   const dist  = colorDist(target, picked);
   const score = distToScore(dist);
   attempts.push({ color: picked, score });
@@ -401,6 +403,8 @@ function finishRound() {
   done = true;
   hoverPrev.style.display = 'none';
   const best_score = Math.max(...attempts.map(a => a.score));
+
+  if (window.sfAudio) window.sfAudio.play('result');
 
   // Update best
   if (best_score > best) {

@@ -184,6 +184,7 @@
   <script src="security.js"></script>
   <script type="module" src="db.js"></script>
   <script src="theme.js"></script>
+  <script src="audio.js"></script>
 </head>
 <body>
 
@@ -280,6 +281,7 @@ function updateBestDisplay() {
 
 function selectTime(ms) {
   if (state === 'running') return;
+  if (window.sfAudio) window.sfAudio.play('tap');
   targetTime = ms;
   targetDisp.textContent = `목표: ${formatMs(targetTime)}초`;
   
@@ -312,6 +314,7 @@ timeOpts.addEventListener('click', e => {
 
 function requestCustomTime() {
   if (state === 'running') return;
+  if (window.sfAudio) window.sfAudio.play('tap');
   const raw = prompt("목표 시간을 입력하세요 (최소 10초, 소수점 가능):", "10");
   if (!raw) return;
   
@@ -337,6 +340,7 @@ function resetTimer() {
 
 function startTimer() {
   state = 'running';
+  if (window.sfAudio) window.sfAudio.play('tick');
   resultZone.classList.remove('show');
   timerWrap.classList.remove('done');
   timerWrap.classList.add('running');
@@ -375,6 +379,8 @@ function stopTimer() {
   const endTime = performance.now();
   const elapsed = (endTime - startTime) / 1000;
   
+  if (window.sfAudio) window.sfAudio.play('result');
+
   timeDisp.textContent = formatMs(elapsed);
   timeDisp.style.opacity = '1'; // Reveal instantly
   timerWrap.classList.remove('running');
