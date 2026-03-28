@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://smoothfun.netlify.app/sitemap.xml
