@@ -222,7 +222,6 @@
     <!-- Math Game (Right) -->
     <div class="panel math-wrap" id="mathZone">
       <div class="panel-bg-title">MATH!</div>
-      <div class="math-alert-bar"><div class="math-timer-fill" id="mathTimerBar"></div></div>
       <div class="math-problem" id="mathProblem">? + ? =</div>
       <div class="math-answers">
         <button class="math-btn" onclick="checkMath(0)"></button>
@@ -239,8 +238,8 @@
     <div style="font-size:2rem; font-weight:900; color:var(--text); margin-bottom:0.5rem;" id="overlayTitle">극한의 뇌지컬 테스트</div>
     <div style="color:var(--dim); font-size:1rem; line-height:1.6;" id="overlayDesc">
       <b>[왼쪽 패널]</b> 사방에서 날아오는 블록을 피하세요. (WASD키 또는 빈 공간 드래그)<br>
-      <b>[오른쪽 패널]</b> 4초 안에 사칙연산 정답을 누르세요.<br>
-      뭐 하나라도 삐끗하면 <b>즉시 사망</b>합니다.
+      <b>[오른쪽 패널]</b> 사칙연산 정답을 눌러서 수학 점수를 올리세요.<br>
+      뭐 하나라도 삐끗하면(장애물 충돌 또는 산수 오답) <b>즉시 사망</b>합니다.
     </div>
     <button class="btn-start" onclick="startGame()" id="startBtn">도전 시작</button>
   </div>
@@ -295,15 +294,12 @@ let lastTime = 0;
 let frameId;
 
 // --- Math System ---
-let mathTimeMax = 4.0;
-let mathTimeLeft = 4.0;
 let mathCorrectAnsw = 0;
 let mathCorrectIdx = 0;
 let mathSolved = 0;
 
 const mathProblemEl = document.getElementById('mathProblem');
 const mathBtns = document.querySelectorAll('.math-btn');
-const mathTimerBar = document.getElementById('mathTimerBar');
 const mathScoreDisp = document.getElementById('mathScoreDisp');
 const survivalTimeDisp = document.getElementById('survivalTimeDisp');
 
@@ -355,11 +351,6 @@ function nextMathProblem() {
     btn.innerText = finalChoices[idx];
     btn.className = 'math-btn'; // reset colors
   });
-  
-  // Reset Timer
-  // 난이도 상승 로직: 생존 시간에 따라 4초 -> 2.5초까지 줄어듦
-  mathTimeMax = Math.max(2.5, 4.0 - (aliveMs / 1000) * 0.03); 
-  mathTimeLeft = mathTimeMax;
 }
 
 window.checkMath = function(idx) {
@@ -572,20 +563,8 @@ function tick(now) {
   
   aliveMs += dt * 1000;
   
-  // Math Timer update
-  mathTimeLeft -= dt;
-  if (mathTimeLeft <= 0) {
-    gameOver('시간 초과 타임아웃! ⏰');
-    return;
-  }
-  
   // UI 
   survivalTimeDisp.innerHTML = `${(aliveMs / 1000).toFixed(2)}<span>초</span>`;
-  const ratio = Math.max(0, mathTimeLeft / mathTimeMax);
-  mathTimerBar.style.width = `${ratio * 100}%`;
-  // Redness intensifies if < 1s
-  if (mathTimeLeft < 1.0) mathTimerBar.style.background = (Date.now() % 200 < 100) ? 'var(--text)' : 'var(--red)';
-  else mathTimerBar.style.background = 'var(--red)';
   
   // Dodge Update
   updateDodge(dt);
