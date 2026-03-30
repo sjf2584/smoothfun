@@ -64,7 +64,7 @@
       margin-bottom: 1rem; padding: 0 0.5rem;
     }
     .hud-title { font-size: 0.8rem; font-weight: 700; color: var(--dim); letter-spacing: 1px; }
-    .hud-value { font-size: 2.5rem; font-weight: 900; color: #fff; line-height: 1; text-shadow: 0 0 10px rgba(255,255,255,.3); font-variant-numeric: tabular-nums; }
+    .hud-value { font-size: 2.5rem; font-weight: 900; color: var(--text); line-height: 1; font-variant-numeric: tabular-nums; }
     .hud-value span { font-size: 1.2rem; color: var(--gold); }
 
     .multi-container {
@@ -118,12 +118,12 @@
       display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1;
     }
     .math-btn {
-      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
-      border-radius: 12px; font-size: 1.8rem; font-weight: 800; color: #fff;
+      background: var(--surface2); border: 2px solid var(--dim);
+      border-radius: 12px; font-size: 1.8rem; font-weight: 800; color: var(--text);
       cursor: pointer; transition: all .1s; display: flex; align-items: center; justify-content: center;
       -webkit-tap-highlight-color: transparent; padding: 10px;
     }
-    .math-btn:active { transform: scale(0.95); background: rgba(255,255,255,.15); }
+    .math-btn:active { transform: scale(0.95); filter: brightness(1.2); }
     .math-btn.math-correct { background: var(--green); color: #000; border-color: var(--green); }
     .math-btn.math-wrong { background: var(--red); color: #fff; border-color: var(--red); animation: shake .2s; }
     
@@ -542,7 +542,7 @@ function tick(now) {
   const ratio = Math.max(0, mathTimeLeft / mathTimeMax);
   mathTimerBar.style.width = `${ratio * 100}%`;
   // Redness intensifies if < 1s
-  if (mathTimeLeft < 1.0) mathTimerBar.style.background = (Date.now() % 200 < 100) ? '#fff' : 'var(--red)';
+  if (mathTimeLeft < 1.0) mathTimerBar.style.background = (Date.now() % 200 < 100) ? 'var(--text)' : 'var(--red)';
   else mathTimerBar.style.background = 'var(--red)';
   
   // Dodge Update
