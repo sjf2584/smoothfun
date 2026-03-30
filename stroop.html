@@ -212,7 +212,7 @@
 <header>
   <a href="index.html" class="btn-home">← 홈으로</a>
   <h1>🤯 뇌정지 컬러 테스트</h1>
-  <p>글자의 <b>'내용(의미)'</b>을 맞추세요! 폰트 색상에 낚이지 마세요.</p>
+  <p>글자에 칠해진 <b>'폰트 색상'</b>을 맞추세요! 글자의 의미에 낚이지 마세요.</p>
 </header>
 
 <div class="info-bar">
@@ -231,7 +231,7 @@
     <div class="big-word" id="bigWord"></div>
     <div class="start-overlay" id="startOverlay">
       <button class="btn-start" onclick="startGame()">도전 시작</button>
-      <p style="margin-top:1rem;color:var(--dim);font-size:.85rem;">글자가 의미하는 색상 버튼을 누르세요.<br>맞추면 +1점, <strong>틀리면 -1점</strong></p>
+      <p style="margin-top:1rem;color:var(--dim);font-size:.85rem;">글자에 칠해진 '폰트 색상' 버튼을 누르세요.<br>맞추면 +1점, <strong>틀리면 -1점</strong></p>
     </div>
     
     <div class="result-overlay" id="resultOverlay">
@@ -366,7 +366,7 @@ function nextWord() {
     }
   }
   
-  currentTextColorId = meaningObj.id; // Correct Answer is the Meaning
+  currentTextColorId = fontObj.id; // Correct Answer is the Font Color
   
   bigWord.innerText = meaningObj.name;
   bigWord.style.color = fontObj.hex;
