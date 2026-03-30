@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>뇌정지 멀티태스킹 | 스무스펀</title>
+  <meta name="description" content="왼손으로는 회피를! 오른손으로는 사칙연산을! 극한의 멀티태스킹 뇌정지 게임입니다.">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#080816; --surface:#0f0f28; --surface2:#181840;
+      --accent:#6c3aff; --cyan:#00d4ff; --pink:#ff3aac;
+      --gold:#ffd700; --text:#e8e8ff; --dim:#6060a0;
+      --green:#00ff88; --red:#ff4444; 
+    }
+    :root[data-theme="light"] {
+      --bg:#f0f2ff; --surface:#ffffff; --surface2:#e8eaff;
+      --accent:#5b2de0; --cyan:#0099cc; --pink:#cc2299;
+      --gold:#b8860b; --text:#1a1a3a; --dim:#8080b0;
+      --green:#00aa55; --red:#cc2222;
+    }
+    :root[data-theme="light"] body::before { background:none; }
+    
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family:'Outfit','Noto Sans KR',sans-serif;
+      background:var(--bg); color:var(--text);
+      min-height:100vh; overflow-x:hidden; 
+      user-select: none;
+    }
+    body::before {
+      content:''; position:fixed; inset:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse at 50% 10%, rgba(255,58,172,.1) 0%, transparent 60%),
+        radial-gradient(ellipse at 50% 90%, rgba(108,58,255,.05) 0%, transparent 60%);
+      z-index: 0;
+    }
+
+    /* ── Header ── */
+    header { text-align:center; padding:3rem 1rem .5rem; z-index:1; position:relative; }
+    header h1 {
+      font-size:clamp(1.8rem,4vw,2.5rem); font-weight:900; line-height:1.2;
+      background:linear-gradient(135deg,var(--pink),var(--cyan));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    header p { color:var(--dim); font-size:.9rem; margin-top:.4rem; }
+
+    .btn-home {
+      display: inline-block; position: absolute; left: 1rem; top: 1rem;
+      padding: .4rem .8rem; border-radius: 8px; font-size: .8rem; font-weight: 700;
+      color: var(--pink); text-decoration: none; border: 1px solid rgba(255,58,172,.3);
+      transition: all .2s;
+    }
+    .btn-home:hover { background: rgba(255,58,172,.1); }
+
+    /* ── Game Area ── */
+    .game-section {
+      width: min(100% - 1rem, 900px); margin: 1rem auto;
+      position: relative; z-index: 1;
+    }
+    
+    .survive-hud {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      margin-bottom: 1rem; padding: 0 0.5rem;
+    }
+    .hud-title { font-size: 0.8rem; font-weight: 700; color: var(--dim); letter-spacing: 1px; }
+    .hud-value { font-size: 2.5rem; font-weight: 900; color: #fff; line-height: 1; text-shadow: 0 0 10px rgba(255,255,255,.3); font-variant-numeric: tabular-nums; }
+    .hud-value span { font-size: 1.2rem; color: var(--gold); }
+
+    .multi-container {
+      display: flex; flex-direction: column; gap: 1rem; height: 600px;
+    }
+    @media (min-width: 768px) {
+      .multi-container { flex-direction: row; height: 450px; }
+    }
+    @media (max-width: 767px) {
+      .multi-container { height: auto; } /* Let it stretch on mobile */
+    }
+
+    .panel {
+      flex: 1; background: var(--surface); border: 2px solid var(--surface2);
+      border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.3);
+      position: relative; overflow: hidden; display: flex; flex-direction: column;
+    }
+    .panel-bg-title {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      font-size: 4rem; font-weight: 900; color: rgba(255,255,255,0.03);
+      pointer-events: none; white-space: nowrap; z-index: 0;
+    }
+
+    /* ── Dodge Game (Left) ── */
+    .dodge-wrap { height: 100%; min-height: 300px; position: relative; }
+    canvas { display: block; width: 100%; height: 100%; z-index: 1; position: relative; }
+    
+    /* Mobile tap controls for dodge */
+    .dodge-controls {
+      position: absolute; inset: 0; display: flex; z-index: 2;
+    }
+    .dodge-btn { flex: 1; } 
+
+    /* ── Math Game (Right) ── */
+    .math-wrap { padding: 1.5rem; justify-content: center; z-index: 1; }
+    
+    .math-alert-bar {
+      width: 100%; height: 8px; background: rgba(255,68,68,.1); border-radius: 4px; overflow: hidden;
+      margin-bottom: 1rem; box-shadow: inset 0 0 5px rgba(0,0,0,.5);
+    }
+    .math-timer-fill {
+      width: 100%; height: 100%; background: var(--red); transition: width 0.1s linear, background 0.3s;
+    }
+    
+    .math-problem {
+      font-size: 3.5rem; font-weight: 900; text-align: center; letter-spacing: -1px;
+      margin: 1.5rem 0 2.5rem; text-shadow: 0 5px 15px rgba(0,0,0,.5);
+    }
+
+    .math-answers {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1;
+    }
+    .math-btn {
+      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px; font-size: 1.8rem; font-weight: 800; color: #fff;
+      cursor: pointer; transition: all .1s; display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent; padding: 10px;
+    }
+    .math-btn:active { transform: scale(0.95); background: rgba(255,255,255,.15); }
+    .math-btn.math-correct { background: var(--green); color: #000; border-color: var(--green); }
+    .math-btn.math-wrong { background: var(--red); color: #fff; border-color: var(--red); animation: shake .2s; }
+    
+    @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+
+    /* ── Overlays ── */
+    .overlay {
+      position: absolute; inset: 0; background: rgba(15,15,40,.9); backdrop-filter: blur(5px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 10; border-radius: 16px; transition: opacity 0.3s;
+      text-align: center;
+    }
+    .overlay-hide { opacity: 0; pointer-events: none; }
+    
+    .btn-start {
+      background: linear-gradient(135deg, var(--accent), var(--pink));
+      color: #fff; font-size: 1.5rem; font-weight: 800; border: none;
+      padding: 1rem 3rem; border-radius: 50px; cursor: pointer;
+      box-shadow: 0 5px 20px rgba(108,58,255,.4); transition: transform 0.2s; margin-top:1.5rem;
+    }
+    .btn-start:hover { transform: scale(1.05); }
+    .btn-start:active { transform: scale(0.95); }
+
+    /* ── Leaderboard ── */
+    .lb-section {
+      width:min(900px, 100% - 1rem); margin: 3rem auto 2rem;
+      background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08);
+      border-radius:16px; padding:1.5rem; position:relative; z-index:1;
+    }
+    .lb-header { text-align:center; margin-bottom:1rem; }
+    .lb-header h2 { font-size:1.4rem; color:var(--gold); display:flex; align-items:center; justify-content:center; gap:.5rem; }
+    .lb-list { display:flex; flex-direction:column; gap:.4rem; min-height:150px; }
+    .lb-item {
+      display:flex; align-items:center; background:rgba(0,0,0,.3); padding:.6rem 1rem;
+      border-radius:10px; font-size:.9rem;
+    }
+    .lb-item.empty { justify-content:center; color:var(--dim); font-size:.8rem; font-style:italic; }
+    .lb-rank { width:24px; font-weight:900; color:var(--dim); }
+    .lb-item:nth-child(1) .lb-rank { color:var(--gold); }
+    .lb-item:nth-child(2) .lb-rank { color:#c0c0c0; }
+    .lb-item:nth-child(3) .lb-rank { color:#cd7f32; }
+    .lb-name { flex:1; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:1rem; }
+    .lb-score { font-family:monospace; font-size:.95rem; color:var(--cyan); font-weight:700; }
+
+    /* AdSense 사이드바 */
+    .ad-sidebar { position:fixed; top:50%; transform:translateY(-50%); width:160px; z-index:10; }
+    .ad-left  { left:8px; }
+    .ad-right { right:8px; }
+    @media (max-width:1300px) { .ad-sidebar { display:none; } }
+  </style>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1363977997493751" crossorigin="anonymous"></script>
+  <script src="security.js"></script>
+  <script src="theme.js"></script>
+  <script type="module" src="db.js"></script>
+  <meta name="google-adsense-account" content="ca-pub-1363977997493751">
+</head>
+<body>
+
+<div class="ad-sidebar ad-left">
+  <ins class="adsbygoogle" style="display:block;width:160px;height:600px"
+    data-ad-client="ca-pub-1363977997493751" data-ad-slot="XXXXXXXXXX"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+<div class="ad-sidebar ad-right">
+  <ins class="adsbygoogle" style="display:block;width:160px;height:600px"
+    data-ad-client="ca-pub-1363977997493751" data-ad-slot="XXXXXXXXXX"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+
+<header>
+  <a href="index.html" class="btn-home">← 홈으로</a>
+  <h1>🤹 뇌정지 멀티태스킹</h1>
+  <p>회피와 산수를 동시에! 하나라도 실패하면 즉시 끝납니다.</p>
+</header>
+
+<div class="game-section">
+  <div class="survive-hud">
+    <div>
+      <div class="hud-title">SURVIVED TIME</div>
+      <div class="hud-value" id="survivalTimeDisp">0.00<span>초</span></div>
+    </div>
+    <div style="text-align:right;">
+      <div class="hud-title">MATH SOLVED</div>
+      <div class="hud-value" style="color:var(--dim);font-size:1.5rem;" id="mathScoreDisp">0</div>
+    </div>
+  </div>
+
+  <div class="multi-container">
+    <!-- Dodge Game (Left) -->
+    <div class="panel dodge-wrap" id="dodgeZone">
+      <div class="panel-bg-title">DODGE!</div>
+      <canvas id="gameCanvas"></canvas>
+      <div class="dodge-controls">
+        <div class="dodge-btn" id="btnLeft"></div>
+        <div class="dodge-btn" id="btnRight"></div>
+      </div>
+    </div>
+
+    <!-- Math Game (Right) -->
+    <div class="panel math-wrap" id="mathZone">
+      <div class="panel-bg-title">MATH!</div>
+      <div class="math-alert-bar"><div class="math-timer-fill" id="mathTimerBar"></div></div>
+      <div class="math-problem" id="mathProblem">? + ? =</div>
+      <div class="math-answers">
+        <button class="math-btn" onclick="checkMath(0)"></button>
+        <button class="math-btn" onclick="checkMath(1)"></button>
+        <button class="math-btn" onclick="checkMath(2)"></button>
+        <button class="math-btn" onclick="checkMath(3)"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Overlay (Start / Dead) -->
+  <div class="overlay" id="globalOverlay">
+    <div style="font-size:3rem; margin-bottom:1rem;" id="overlayIcon">🤹</div>
+    <div style="font-size:2rem; font-weight:900; color:var(--text); margin-bottom:0.5rem;" id="overlayTitle">극한의 뇌지컬 테스트</div>
+    <div style="color:var(--dim); font-size:1rem; line-height:1.6;" id="overlayDesc">
+      <b>[왼쪽 패널]</b> 떨어지는 블록을 피하세요. (A, D키 또는 화면 좌우 터치)<br>
+      <b>[오른쪽 패널]</b> 4초 안에 사칙연산 정답을 누르세요.<br>
+      뭐 하나라도 삐끗하면 <b>즉시 사망</b>합니다.
+    </div>
+    <button class="btn-start" onclick="startGame()" id="startBtn">도전 시작</button>
+  </div>
+</div>
+
+<div class="lb-section">
+  <div class="lb-header"><h2>🏆 생존자 TOP 10</h2></div>
+  <div class="lb-list" id="lbList"><div class="lb-item empty">랭킹 불러오는 중...</div></div>
+</div>
+
+<script>
+// --- Audio System ---
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new AudioContext();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playSound(type) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  const now = audioCtx.currentTime;
+  
+  if (type === 'pass') {
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.exponentialRampToValueAtTime(1400, now + 0.1);
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.linearRampToValueAtTime(0, now + 0.1);
+    osc.start(now); osc.stop(now + 0.1);
+  } else if (type === 'fail') {
+    // Explosion sound
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(100, now);
+    osc.frequency.exponentialRampToValueAtTime(10, now + 0.5);
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+    osc.start(now); osc.stop(now + 0.5);
+  }
+}
+
+// --- Global State ---
+let isPlaying = false;
+let aliveMs = 0;
+let lastTime = 0;
+let frameId;
+
+// --- Math System ---
+let mathTimeMax = 4.0;
+let mathTimeLeft = 4.0;
+let mathCorrectAnsw = 0;
+let mathCorrectIdx = 0;
+let mathSolved = 0;
+
+const mathProblemEl = document.getElementById('mathProblem');
+const mathBtns = document.querySelectorAll('.math-btn');
+const mathTimerBar = document.getElementById('mathTimerBar');
+const mathScoreDisp = document.getElementById('mathScoreDisp');
+const survivalTimeDisp = document.getElementById('survivalTimeDisp');
+
+function nextMathProblem() {
+  const ops = ['+', '-', 'x'];
+  const op = ops[Math.floor(Math.random() * ops.length)];
+  let a, b, answer;
+  
+  if (op === '+') {
+    a = Math.floor(Math.random() * 40) + 1; // 1~40
+    b = Math.floor(Math.random() * 40) + 1;
+    answer = a + b;
+  } else if (op === '-') {
+    a = Math.floor(Math.random() * 50) + 10; // 10~59
+    b = Math.floor(Math.random() * (a - 1)) + 1; // 1 ~ a-1
+    answer = a - b;
+  } else { // x
+    a = Math.floor(Math.random() * 8) + 2; // 2~9 (구구단)
+    b = Math.floor(Math.random() * 8) + 2;
+    answer = a * b;
+  }
+  
+  mathProblemEl.innerText = `${a} ${op} ${b} =`;
+  mathCorrectAnsw = answer;
+  mathCorrectIdx = Math.floor(Math.random() * 4);
+  
+  // Generate 3 wrong answers close to real
+  let choices = [answer];
+  while(choices.length < 4) {
+    let wrong = answer + Math.floor(Math.random() * 10) - 5;
+    if (wrong !== answer && wrong > 0 && !choices.includes(wrong)) {
+      choices.push(wrong);
+    }
+  }
+  
+  // Shuffle logic
+  const finalChoices = [];
+  for(let i=0; i<4; i++) {
+    if (i === mathCorrectIdx) {
+      finalChoices.push(answer);
+    } else {
+      let w;
+      do { w = choices.pop(); } while(w === answer);
+      finalChoices.push(w);
+    }
+  }
+  
+  mathBtns.forEach((btn, idx) => {
+    btn.innerText = finalChoices[idx];
+    btn.className = 'math-btn'; // reset colors
+  });
+  
+  // Reset Timer
+  // 난이도 상승 로직: 생존 시간에 따라 4초 -> 2.5초까지 줄어듦
+  mathTimeMax = Math.max(2.5, 4.0 - (aliveMs / 1000) * 0.03); 
+  mathTimeLeft = mathTimeMax;
+}
+
+window.checkMath = function(idx) {
+  if(!isPlaying) return;
+  if(idx === mathCorrectIdx) {
+    playSound('pass');
+    mathSolved++;
+    mathScoreDisp.innerText = mathSolved;
+    
+    // UI Feedback
+    mathBtns[idx].classList.add('math-correct');
+    setTimeout(() => { if(isPlaying) nextMathProblem(); }, 100);
+  } else {
+    // WRONG!
+    mathBtns[idx].classList.add('math-wrong');
+    gameOver('산수 오답! 🤯');
+  }
+};
+
+// --- Dodge System (Canvas) ---
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+let cw, ch;
+
+// Player
+const player = { x: 0, y: 0, w: 20, h: 20, vx: 0, speed: 300, color: '#00d4ff' };
+
+// Enemies (Falling blocks)
+let enemies = [];
+let enemySpawnTimer = 0;
+let enemySpawnRate = 0.6; // every 0.6s
+
+// Input
+let keys = { a: false, d: false, ArrowLeft: false, ArrowRight: false };
+
+function resizeCanvas() {
+  const rect = canvas.parentNode.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+  cw = canvas.width;
+  ch = canvas.height;
+  player.y = ch - player.h - 10; // keep at bottom
+  if (player.x === 0) player.x = cw / 2 - player.w / 2; // init center
+}
+window.addEventListener('resize', resizeCanvas);
+
+// Controls
+document.addEventListener('keydown', (e) => {
+  if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
+});
+document.addEventListener('keyup', (e) => {
+  if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
+});
+
+// Touch controls for mobile dodge
+const btnLeft = document.getElementById('btnLeft');
+const btnRight = document.getElementById('btnRight');
+btnLeft.addEventListener('touchstart', (e)=>{ e.preventDefault(); keys.a = true; }, {passive:false});
+btnLeft.addEventListener('touchend', (e)=>{ e.preventDefault(); keys.a = false; }, {passive:false});
+btnLeft.addEventListener('mousedown', (e)=>{ e.preventDefault(); keys.a = true; });
+btnLeft.addEventListener('mouseup', (e)=>{ e.preventDefault(); keys.a = false; });
+btnLeft.addEventListener('mouseleave', (e)=>{ keys.a = false; });
+
+btnRight.addEventListener('touchstart', (e)=>{ e.preventDefault(); keys.d = true; }, {passive:false});
+btnRight.addEventListener('touchend', (e)=>{ e.preventDefault(); keys.d = false; }, {passive:false});
+btnRight.addEventListener('mousedown', (e)=>{ e.preventDefault(); keys.d = true; });
+btnRight.addEventListener('mouseup', (e)=>{ e.preventDefault(); keys.d = false; });
+btnRight.addEventListener('mouseleave', (e)=>{ keys.d = false; });
+
+function initDodge() {
+  resizeCanvas();
+  player.x = cw / 2 - player.w / 2;
+  enemies = [];
+  enemySpawnTimer = 0;
+  enemySpawnRate = 0.6;
+}
+
+function updateDodge(dt) {
+  // Movement
+  let dir = 0;
+  if (keys.a || keys.ArrowLeft) dir -= 1;
+  if (keys.d || keys.ArrowRight) dir += 1;
+  
+  player.x += dir * player.speed * dt;
+  
+  // Boundary
+  if (player.x < 0) player.x = 0;
+  if (player.x + player.w > cw) player.x = cw - player.w;
+  
+  // Spawn Enemy
+  enemySpawnTimer -= dt;
+  if (enemySpawnTimer <= 0) {
+    const w = 20 + Math.random() * 40;
+    const h = 20 + Math.random() * 20;
+    const x = Math.random() * (cw - w);
+    const speed = 150 + Math.random() * 100 + (aliveMs / 1000) * 10; // slowly gets faster
+    
+    enemies.push({ x, y: -h, w, h, speed, color: '#ff3aac' });
+    
+    // Rate gets faster over time (min 0.2)
+    enemySpawnRate = Math.max(0.18, 0.6 - (aliveMs / 1000) * 0.015);
+    enemySpawnTimer = enemySpawnRate;
+  }
+  
+  // Move Enemies & Check collision
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    let e = enemies[i];
+    e.y += e.speed * dt;
+    
+    // Collision AABB
+    if (player.x < e.x + e.w && player.x + player.w > e.x &&
+        player.y < e.y + e.h && player.y + player.h > e.y) {
+      // HIT!
+      gameOver('장애물 충돌! 💥');
+      return;
+    }
+    
+    if (e.y > ch) enemies.splice(i, 1);
+  }
+}
+
+function drawDodge() {
+  ctx.clearRect(0, 0, cw, ch);
+  
+  // Draw enemies
+  for (let e of enemies) {
+    ctx.fillStyle = e.color;
+    // Neon glow effect disabled for performance, but we can fake it with simple fill
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = e.color;
+    ctx.fillRect(e.x, e.y, e.w, e.h);
+  }
+  
+  // Draw player
+  ctx.fillStyle = player.color;
+  ctx.shadowBlur = 15;
+  ctx.shadowColor = player.color;
+  ctx.fillRect(player.x, player.y, player.w, player.h);
+  
+  ctx.shadowBlur = 0; // reset
+}
+
+// --- Main Loop ---
+window.startGame = function() {
+  initAudio();
+  
+  isPlaying = true;
+  aliveMs = 0;
+  mathSolved = 0;
+  mathScoreDisp.innerText = '0';
+  document.getElementById('globalOverlay').classList.add('overlay-hide');
+  
+  initDodge();
+  nextMathProblem();
+  
+  lastTime = performance.now();
+  frameId = requestAnimationFrame(tick);
+};
+
+function tick(now) {
+  if (!isPlaying) return;
+  let dt = (now - lastTime) / 1000;
+  if(dt > 0.1) dt = 0.1;
+  lastTime = now;
+  
+  aliveMs += dt * 1000;
+  
+  // Math Timer update
+  mathTimeLeft -= dt;
+  if (mathTimeLeft <= 0) {
+    gameOver('시간 초과 타임아웃! ⏰');
+    return;
+  }
+  
+  // UI 
+  survivalTimeDisp.innerHTML = `${(aliveMs / 1000).toFixed(2)}<span>초</span>`;
+  const ratio = Math.max(0, mathTimeLeft / mathTimeMax);
+  mathTimerBar.style.width = `${ratio * 100}%`;
+  // Redness intensifies if < 1s
+  if (mathTimeLeft < 1.0) mathTimerBar.style.background = (Date.now() % 200 < 100) ? '#fff' : 'var(--red)';
+  else mathTimerBar.style.background = 'var(--red)';
+  
+  // Dodge Update
+  updateDodge(dt);
+  if (!isPlaying) return; // double check if died in updateDodge
+  drawDodge();
+  
+  frameId = requestAnimationFrame(tick);
+}
+
+function gameOver(reason) {
+  if (!isPlaying) return;
+  isPlaying = false;
+  playSound('fail');
+  
+  const finalSec = (aliveMs / 1000).toFixed(2);
+  
+  document.getElementById('globalOverlay').classList.remove('overlay-hide');
+  document.getElementById('overlayIcon').innerText = '💀';
+  document.getElementById('overlayTitle').innerText = 'Game Over';
+  document.getElementById('overlayDesc').innerHTML = `<b style="color:var(--red);">${reason}</b><br><br>버틴 시간: <b>${finalSec}</b>초<br>푼 문제: <b>${mathSolved}</b>개`;
+  document.getElementById('startBtn').innerText = '다시 도전';
+  
+  drawDodge(); // redraw static last frame
+  
+  // Save Score
+  setTimeout(async () => {
+    if (!window.dbAPI) return;
+    const scoreVal = Number(finalSec);
+    const isTop = await window.dbAPI.isTop10('multitask', 'all', scoreVal, 'desc');
+    if (isTop) {
+      const name = window.dbAPI.getGuestId();
+      await window.dbAPI.saveScore('multitask', 'all', name, scoreVal, `${finalSec}초`, 'desc');
+      loadLeaderboard();
+    }
+  }, 500);
+}
+
+// ── Leaderboard Logic ─────────────────────
+function loadLeaderboard() {
+  const list = document.getElementById('lbList');
+  list.innerHTML = '<div class="lb-item empty">데이터를 불러오는 중...</div>';
+  
+  if (!window.dbAPI) { setTimeout(loadLeaderboard, 100); return; }
+  window.dbAPI.getTop10('multitask', 'all', 'desc').then(data => {
+    if (!data || data.length === 0) { list.innerHTML = '<div class="lb-item empty">아직 기록이 없습니다. 첫 랭커가 되어보세요!</div>'; return; }
+    list.innerHTML = data.map((d, i) => `
+      <div class="lb-item">
+        <span class="lb-rank">${i+1}</span>
+        <span class="lb-name">${d.name}</span>
+        <span class="lb-score">${d.extraText}</span>
+      </div>`).join('');
+  });
+}
+loadLeaderboard();
+</script>
+</body>
+</html>
