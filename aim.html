@@ -247,47 +247,16 @@ let frameId;
 
 // Audio
 const AudioContext = window.AudioContext || window.webkitAudioContext;
-let audioCtx, osc, hoverGain;
+let audioCtx;
 
 function initAudio() {
-  if (hoverGain) return; // already inited
-  if (!audioCtx) audioCtx = new AudioContext();
+  if (audioCtx) return; // already inited
+  audioCtx = new AudioContext();
   if (audioCtx.state === 'suspended') audioCtx.resume();
-  
-  // Create continuous spark/synth sound
-  osc = audioCtx.createOscillator();
-  hoverGain = audioCtx.createGain();
-  
-  osc.type = 'sawtooth';
-  osc.frequency.value = 80; // Low hum
-  
-  // add a little LFO to frequency for buzz
-  const lfo = audioCtx.createOscillator();
-  lfo.frequency.value = 15; // 15hz flutter
-  const lfoGain = audioCtx.createGain();
-  lfoGain.gain.value = 20;
-  lfo.connect(lfoGain);
-  lfoGain.connect(osc.frequency);
-  
-  hoverGain.gain.value = 0; // muted by default
-  
-  osc.connect(hoverGain);
-  hoverGain.connect(audioCtx.destination);
-  
-  osc.start();
-  lfo.start();
 }
 
 function updateAudio(hovering) {
-  if(!hoverGain || !audioCtx) return;
-  const now = audioCtx.currentTime;
-  if (hovering) {
-    hoverGain.gain.setTargetAtTime(0.1, now, 0.05); // ramp up
-    osc.frequency.setTargetAtTime(120, now, 0.1); // pitch up slight
-  } else {
-    hoverGain.gain.setTargetAtTime(0, now, 0.05); // ramp down
-    osc.frequency.setTargetAtTime(80, now, 0.1); // pitch down
-  }
+  // 효과음이 너무 시끄럽다는 피드백에 의해 제거됨
 }
 
 function playResultSound(acc) {
