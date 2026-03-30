@@ -1,37 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://sjf2584.github.io/smoothfun/</loc>
+    <loc>https://smoothfun.netlify.app/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://sjf2584.github.io/smoothfun/color-match.html</loc>
+    <loc>https://smoothfun.netlify.app/color-match.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://sjf2584.github.io/smoothfun/fakeout.html</loc>
+    <loc>https://smoothfun.netlify.app/fakeout.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://sjf2584.github.io/smoothfun/memory.html</loc>
+    <loc>https://smoothfun.netlify.app/memory.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://sjf2584.github.io/smoothfun/perfect-shape.html</loc>
+    <loc>https://smoothfun.netlify.app/perfect-shape.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://sjf2584.github.io/smoothfun/pitch.html</loc>
+    <loc>https://smoothfun.netlify.app/pitch.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://sjf2584.github.io/smoothfun/stopwatch.html</loc>
+    <loc>https://smoothfun.netlify.app/stopwatch.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
