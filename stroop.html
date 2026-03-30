@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>뇌정지 컬러 테스트 | 스무스펀</title>
+  <meta name="description" content="글자의 '의미'를 맞추는 뇌정지 컬러 테스트입니다. 폰트 색상에 속지 마세요!">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#080816; --surface:#0f0f28; --surface2:#181840;
+      --accent:#6c3aff; --cyan:#00d4ff; --pink:#ff3aac;
+      --gold:#ffd700; --text:#e8e8ff; --dim:#6060a0;
+      --green:#00ff88; --red:#ff4444; 
+      
+      --c-red: #ff3333;
+      --c-blue: #3377ff;
+      --c-green: #00dd55;
+      --c-yellow: #ffcc00;
+    }
+    :root[data-theme="light"] {
+      --bg:#f0f2ff; --surface:#ffffff; --surface2:#e8eaff;
+      --accent:#5b2de0; --cyan:#0099cc; --pink:#cc2299;
+      --gold:#b8860b; --text:#1a1a3a; --dim:#8080b0;
+      --green:#00aa55; --red:#cc2222;
+      
+      --c-red: #cc1111;
+      --c-blue: #1155cc;
+      --c-green: #009933;
+      --c-yellow: #eeaa00;
+    }
+    :root[data-theme="light"] body::before { background:none; }
+    
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family:'Outfit','Noto Sans KR',sans-serif;
+      background:var(--bg); color:var(--text);
+      min-height:100vh; overflow-x:hidden; transition: background 0.1s;
+    }
+    body::before {
+      content:''; position:fixed; inset:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse at 50% 10%, rgba(108,58,255,.1) 0%, transparent 60%),
+        radial-gradient(ellipse at 50% 90%, rgba(255,58,172,.05) 0%, transparent 60%);
+      z-index: 0;
+    }
+
+    /* ── Header ── */
+    header { text-align:center; padding:3rem 1rem .5rem; z-index:1; position:relative; }
+    header h1 {
+      font-size:clamp(1.8rem,5vw,2.8rem); font-weight:900; line-height:1.2;
+      background:linear-gradient(135deg,var(--cyan),var(--accent));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    header p { color:var(--dim); font-size:.9rem; margin-top:.4rem; }
+
+    .btn-home {
+      display: inline-block; position: absolute; left: 1rem; top: 1rem;
+      padding: .4rem .8rem; border-radius: 8px; font-size: .8rem; font-weight: 700;
+      color: var(--cyan); text-decoration: none; border: 1px solid rgba(0,212,255,.3);
+      transition: all .2s;
+    }
+    .btn-home:hover { background: rgba(0,212,255,.1); }
+
+    /* ── Game Info ── */
+    .info-bar {
+      display:flex; justify-content:space-between; align-items:flex-end;
+      width: min(600px, 100% - 2rem); margin: 1rem auto;
+      z-index:1; position:relative;
+    }
+    
+    .score-wrap {
+      display: flex; flex-direction: column; align-items: flex-start;
+    }
+    .score-label { font-size: .8rem; color: var(--dim); letter-spacing: 1px; font-weight: 700; margin-bottom: .2rem; }
+    .score-val { font-size: 2.5rem; font-weight: 900; color: #fff; line-height: 1; text-shadow: 0 0 10px rgba(255,255,255,.3); }
+    .score-val.flash-up { animation: scoreUp 0.3s; color: var(--green); }
+    .score-val.flash-down { animation: scoreDown 0.3s; color: var(--red); }
+    
+    .timer-wrap { display: flex; flex-direction: column; align-items: flex-end; }
+    .timer-val { font-size: 2rem; font-weight: 900; color: var(--gold); line-height: 1; font-variant-numeric: tabular-nums; }
+    .timer-bar-bg { width: 140px; height: 8px; background: rgba(255,255,255,.1); border-radius: 4px; margin-top: 8px; overflow: hidden; }
+    .timer-bar-fill { width: 100%; height: 100%; background: linear-gradient(90deg, var(--gold), var(--pink)); transition: width 0.1s linear; }
+
+    @keyframes scoreUp { 0% { transform: scale(1.3); } 100% { transform: scale(1); } }
+    @keyframes scoreDown { 0% { transform: scale(0.8); } 100% { transform: scale(1); } }
+
+    /* ── Game Area ── */
+    .game-wrap {
+      width: min(100% - 2rem, 600px); margin: 0 auto;
+      background: var(--surface); border: 2px solid var(--surface2); border-radius: 20px;
+      padding: 2rem 1rem; text-align: center; position: relative; z-index: 1;
+      height: 380px; display: flex; flex-direction: column; justify-content: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,.3);
+    }
+    
+    /* ── Word Container ── */
+    .word-area {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    
+    .big-word {
+      font-size: clamp(4rem, 15vw, 6.5rem); font-weight: 900; letter-spacing: -2px;
+      text-shadow: 0 5px 15px rgba(0,0,0,.3);
+      user-select: none; transition: transform 0.1s;
+    }
+    
+    .start-overlay {
+      position: absolute; inset: 0; background: var(--surface);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 5; border-radius: 12px;
+    }
+    .btn-start {
+      background: linear-gradient(135deg, var(--accent), var(--cyan));
+      color: #fff; font-size: 1.5rem; font-weight: 800; border: none;
+      padding: 1rem 3rem; border-radius: 50px; cursor: pointer;
+      box-shadow: 0 5px 20px rgba(108,58,255,.4); transition: transform 0.2s;
+    }
+    .btn-start:hover { transform: scale(1.05); }
+    .btn-start:active { transform: scale(0.95); }
+
+    .result-overlay {
+      position: absolute; inset: 0; background: rgba(15,15,40,.95); backdrop-filter: blur(5px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 10; border-radius: 16px; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .result-overlay.show { opacity: 1; pointer-events: auto; }
+    .result-title { font-size: 2rem; font-weight: 900; color: var(--gold); margin-bottom: 0.5rem; }
+    .result-score { font-size: 4rem; font-weight: 900; color: #fff; margin-bottom: 1.5rem; }
+
+    /* ── Pads ── */
+    .pads-area {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 1rem;
+    }
+    @media (min-width: 500px) {
+      .pads-area { grid-template-columns: repeat(4, 1fr); }
+    }
+    
+    .pad-btn {
+      height: 80px; border: 2px solid transparent; border-radius: 16px;
+      font-size: 1.2rem; font-weight: 800; color: #fff;
+      cursor: pointer; transition: transform 0.1s, opacity 0.1s, box-shadow 0.1s;
+      display: flex; align-items: center; justify-content: center;
+      text-shadow: 0 2px 4px rgba(0,0,0,.5); opacity: 0.9;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pad-btn:active { transform: scale(0.93); opacity: 1; }
+    .pad-btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+    
+    .pad-red { background: var(--c-red); border-color: rgba(255,255,255,.2); box-shadow: 0 4px 15px rgba(255,51,51,.3); }
+    .pad-blue { background: var(--c-blue); border-color: rgba(255,255,255,.2); box-shadow: 0 4px 15px rgba(51,119,255,.3); }
+    .pad-green { background: var(--c-green); border-color: rgba(255,255,255,.2); box-shadow: 0 4px 15px rgba(0,221,85,.3); }
+    .pad-yellow { background: var(--c-yellow); border-color: rgba(255,255,255,.2); color: #000; text-shadow: none; box-shadow: 0 4px 15px rgba(255,204,0,.3); }
+
+    /* Failure flash */
+    body.flash-bg { animation: bgFlash 0.3s; }
+    @keyframes bgFlash { 0% { background: #550000; } 100% { background: var(--bg); } }
+
+    /* ── Leaderboard ── */
+    .lb-section {
+      width:min(600px, 100% - 2rem); margin: 3rem auto 2rem;
+      background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08);
+      border-radius:16px; padding:1.5rem; position:relative; z-index:1;
+    }
+    .lb-header { text-align:center; margin-bottom:1rem; }
+    .lb-header h2 { font-size:1.4rem; color:var(--gold); display:flex; align-items:center; justify-content:center; gap:.5rem; }
+    .lb-tabs { display:flex; gap:.4rem; justify-content:center; margin-bottom:1rem; flex-wrap:wrap; }
+    .lb-tab {
+      background:transparent; border:1px solid rgba(255,255,255,.2); color:var(--dim);
+      padding:.3rem .8rem; border-radius:20px; font-size:.75rem; cursor:pointer; font-family:inherit; transition:all .2s;
+    }
+    .lb-tab.active { background:var(--gold); color:#000; border-color:var(--gold); font-weight:800; }
+    .lb-list { display:flex; flex-direction:column; gap:.4rem; min-height:150px; }
+    .lb-item {
+      display:flex; align-items:center; background:rgba(0,0,0,.3); padding:.6rem 1rem;
+      border-radius:10px; font-size:.9rem;
+    }
+    .lb-item.empty { justify-content:center; color:var(--dim); font-size:.8rem; font-style:italic; }
+    .lb-rank { width:24px; font-weight:900; color:var(--dim); }
+    .lb-item:nth-child(1) .lb-rank { color:var(--gold); }
+    .lb-item:nth-child(2) .lb-rank { color:#c0c0c0; }
+    .lb-item:nth-child(3) .lb-rank { color:#cd7f32; }
+    .lb-name { flex:1; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:1rem; }
+    .lb-score { font-family:monospace; font-size:.95rem; color:var(--cyan); font-weight:700; }
+
+    /* AdSense 사이드바 */
+    .ad-sidebar { position:fixed; top:50%; transform:translateY(-50%); width:160px; z-index:10; }
+    .ad-left  { left:8px; }
+    .ad-right { right:8px; }
+    @media (max-width:1300px) { .ad-sidebar { display:none; } }
+  </style>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1363977997493751" crossorigin="anonymous"></script>
+  <script src="security.js"></script>
+  <script src="theme.js"></script>
+  <script type="module" src="db.js"></script>
+  <meta name="google-adsense-account" content="ca-pub-1363977997493751">
+</head>
+<body>
+
+<div class="ad-sidebar ad-left">
+  <ins class="adsbygoogle" style="display:block;width:160px;height:600px"
+    data-ad-client="ca-pub-1363977997493751" data-ad-slot="XXXXXXXXXX"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+<div class="ad-sidebar ad-right">
+  <ins class="adsbygoogle" style="display:block;width:160px;height:600px"
+    data-ad-client="ca-pub-1363977997493751" data-ad-slot="XXXXXXXXXX"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+
+<header>
+  <a href="index.html" class="btn-home">← 홈으로</a>
+  <h1>🤯 뇌정지 컬러 테스트</h1>
+  <p>글자의 <b>'내용(의미)'</b>을 맞추세요! 폰트 색상에 낚이지 마세요.</p>
+</header>
+
+<div class="info-bar">
+  <div class="score-wrap">
+    <div class="score-label">SCORE</div>
+    <div class="score-val" id="scoreDisp">0</div>
+  </div>
+  <div class="timer-wrap">
+    <div class="timer-val" id="timerDisp">15.0</div>
+    <div class="timer-bar-bg"><div class="timer-bar-fill" id="timerBar"></div></div>
+  </div>
+</div>
+
+<div class="game-wrap">
+  <div class="word-area">
+    <div class="big-word" id="bigWord"></div>
+    <div class="start-overlay" id="startOverlay">
+      <button class="btn-start" onclick="startGame()">도전 시작</button>
+      <p style="margin-top:1rem;color:var(--dim);font-size:.85rem;">글자가 의미하는 색상 버튼을 누르세요.<br>맞추면 +1점, <strong>틀리면 -1점</strong></p>
+    </div>
+    
+    <div class="result-overlay" id="resultOverlay">
+      <div class="result-title">Game Over!</div>
+      <div class="result-score" id="finalScoreDisp">0</div>
+      <button class="btn-start" onclick="startGame()" style="font-size:1.1rem;padding: .8rem 2rem;">다시 하기</button>
+    </div>
+  </div>
+  
+  <div class="pads-area">
+    <button class="pad-btn pad-red" data-color="red" onclick="handlePad(this)" disabled>진행중...</button>
+    <button class="pad-btn pad-blue" data-color="blue" onclick="handlePad(this)" disabled>진행중...</button>
+    <button class="pad-btn pad-green" data-color="green" onclick="handlePad(this)" disabled>진행중...</button>
+    <button class="pad-btn pad-yellow" data-color="yellow" onclick="handlePad(this)" disabled>진행중...</button>
+  </div>
+</div>
+
+<div class="lb-section">
+  <div class="lb-header"><h2>🏆 오늘의 TOP 10</h2></div>
+  <div class="lb-tabs">
+    <button class="lb-tab active">통합 순위</button>
+  </div>
+  <div class="lb-list" id="lbList"><div class="lb-item empty">랭킹 불러오는 중...</div></div>
+</div>
+
+<script>
+// --- Configuration ---
+const COLORS = [
+  { id: 'red', name: '빨강', hex: 'var(--c-red)' },
+  { id: 'blue', name: '파랑', hex: 'var(--c-blue)' },
+  { id: 'green', name: '초록', hex: 'var(--c-green)' },
+  { id: 'yellow', name: '노랑', hex: 'var(--c-yellow)' }
+];
+const GAME_TIME = 15.0;
+
+// --- State ---
+let score = 0;
+let timeRemaining = 0;
+let isPlaying = false;
+let currentTextColorId = ''; // The 'meaning' of the text
+let frameId = null;
+let lastTime = 0;
+
+// --- Audio System ---
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function initAudio() {
+  if (!audioCtx) audioCtx = new AudioContext();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playSound(type) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  const now = audioCtx.currentTime;
+  
+  if (type === 'pass') {
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.exponentialRampToValueAtTime(1400, now + 0.08);
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.linearRampToValueAtTime(0, now + 0.1);
+    osc.start(now); osc.stop(now + 0.1);
+  } else if (type === 'fail') {
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, now);
+    osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.linearRampToValueAtTime(0, now + 0.2);
+    osc.start(now); osc.stop(now + 0.2);
+  } else if (type === 'end') {
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(400, now);
+    osc.frequency.setValueAtTime(600, now+0.1);
+    osc.frequency.setValueAtTime(800, now+0.2);
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.linearRampToValueAtTime(0, now + 0.4);
+    osc.start(now); osc.stop(now + 0.4);
+  }
+}
+
+// --- DOM ---
+const scoreDisp = document.getElementById('scoreDisp');
+const timerDisp = document.getElementById('timerDisp');
+const timerBar = document.getElementById('timerBar');
+const bigWord = document.getElementById('bigWord');
+const startOverlay = document.getElementById('startOverlay');
+const resultOverlay = document.getElementById('resultOverlay');
+const finalScoreDisp = document.getElementById('finalScoreDisp');
+const pads = document.querySelectorAll('.pad-btn');
+const padDataMap = {};
+pads.forEach(p => padDataMap[p.dataset.color] = p.innerText);
+
+// --- Logic ---
+function startGame() {
+  initAudio();
+  score = 0;
+  timeRemaining = GAME_TIME;
+  isPlaying = true;
+  
+  updateScoreDisp();
+  startOverlay.style.display = 'none';
+  resultOverlay.classList.remove('show');
+  pads.forEach(p => {
+    p.disabled = false;
+    p.innerText = ''; // Remove "진행중..."
+  });
+  
+  // Update Buttons Names Randomly to add confusion? (No, keeping pad text empty or normal)
+  // We will keep pads as solid colors without texts. The buttons already have specific CSS colors.
+  
+  nextWord();
+  
+  lastTime = performance.now();
+  frameId = requestAnimationFrame(tick);
+}
+
+function nextWord() {
+  // Pick random word 'meaning'
+  const meaningObj = COLORS[Math.floor(Math.random() * COLORS.length)];
+  
+  // Pick random 'font color'
+  // Sometimes it matches, sometimes it doesn't. Give 75% chance to not match.
+  let fontObj = COLORS[Math.floor(Math.random() * COLORS.length)];
+  if (Math.random() < 0.75) {
+    while(fontObj.id === meaningObj.id) {
+      fontObj = COLORS[Math.floor(Math.random() * COLORS.length)];
+    }
+  }
+  
+  currentTextColorId = meaningObj.id; // Correct Answer is the Meaning
+  
+  bigWord.innerText = meaningObj.name;
+  bigWord.style.color = fontObj.hex;
+  
+  // Little animation
+  bigWord.style.transform = 'scale(0.8)';
+  setTimeout(() => bigWord.style.transform = 'scale(1)', 30);
+}
+
+function handlePad(btn) {
+  if (!isPlaying) return;
+  const clickedColorId = btn.dataset.color;
+  
+  if (clickedColorId === currentTextColorId) {
+    // Correct
+    score++;
+    playSound('pass');
+    animateScore('flash-up');
+    nextWord();
+  } else {
+    // Wrong
+    score--;
+    playSound('fail');
+    animateScore('flash-down');
+    document.body.classList.add('flash-bg');
+    setTimeout(() => document.body.classList.remove('flash-bg'), 300);
+    // Don't change word on wrong, make them try again (optional) or move next?
+    // Let's move next to keep flow fast!
+    nextWord();
+  }
+}
+
+function animateScore(animClass) {
+  scoreDisp.className = 'score-val ' + animClass;
+  setTimeout(() => {
+    if(scoreDisp.className.includes(animClass)) scoreDisp.className = 'score-val';
+  }, 300);
+  updateScoreDisp();
+}
+
+function updateScoreDisp() {
+  scoreDisp.innerText = score;
+}
+
+function tick(now) {
+  if (!isPlaying) return;
+  
+  const delta = (now - lastTime) / 1000;
+  lastTime = now;
+  
+  timeRemaining -= delta;
+  
+  if (timeRemaining <= 0) {
+    timeRemaining = 0;
+    endGame();
+  }
+  
+  timerDisp.innerText = timeRemaining.toFixed(1);
+  timerBar.style.width = `${(timeRemaining / GAME_TIME) * 100}%`;
+  
+  if (isPlaying) {
+    frameId = requestAnimationFrame(tick);
+  }
+}
+
+function endGame() {
+  isPlaying = false;
+  pads.forEach(p => p.disabled = true);
+  playSound('end');
+  
+  finalScoreDisp.innerText = score + '점';
+  resultOverlay.classList.add('show');
+  
+  // Save Score
+  setTimeout(async () => {
+    if (!window.dbAPI) return;
+    const isTop = await window.dbAPI.isTop10('stroop', 'all', score, 'desc');
+    if (isTop) {
+      const name = window.dbAPI.getGuestId();
+      await window.dbAPI.saveScore('stroop', 'all', name, score, `${score}점`, 'desc');
+      loadLeaderboard();
+    }
+  }, 500);
+}
+
+// Key bindings for PC users (Optional but nice)
+document.addEventListener('keydown', (e) => {
+  if(!isPlaying) return;
+  if(e.key === '1' || e.key === 'ArrowLeft') document.querySelector('.pad-red').click();
+  else if(e.key === '2' || e.key === 'ArrowDown') document.querySelector('.pad-blue').click();
+  else if(e.key === '3' || e.key === 'ArrowUp') document.querySelector('.pad-green').click();
+  else if(e.key === '4' || e.key === 'ArrowRight') document.querySelector('.pad-yellow').click();
+});
+
+// ── Leaderboard Logic ─────────────────────
+function loadLeaderboard() {
+  const list = document.getElementById('lbList');
+  list.innerHTML = '<div class="lb-item empty">데이터를 불러오는 중...</div>';
+  
+  if (!window.dbAPI) { setTimeout(loadLeaderboard, 100); return; }
+  window.dbAPI.getTop10('stroop', 'all', 'desc').then(data => {
+    if (!data || data.length === 0) { list.innerHTML = '<div class="lb-item empty">아직 기록이 없습니다. 첫 랭커가 되어보세요!</div>'; return; }
+    list.innerHTML = data.map((d, i) => `
+      <div class="lb-item">
+        <span class="lb-rank">${i+1}</span>
+        <span class="lb-name">${d.name}</span>
+        <span class="lb-score">${d.extraText}</span>
+      </div>`).join('');
+  });
+}
+loadLeaderboard();
+</script>
+</body>
+</html>
