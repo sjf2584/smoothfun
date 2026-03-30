@@ -17,12 +17,5 @@
    - `Source`를 **Deploy from a branch**로 선택
    - `Branch`를 **main** (또는 master)로 선택하고 `Save` 클릭
 4. **접속 접속**: 1~2분 후 `https://[내-깃허브-아이디].github.io/[레포-이름]/` 으로 접속하여 게임을 즐기면 됩니다.
-
-## 💸 수익 창출 (Google AdSense)
-각 HTML 파일 구조 안에 AdSense 반응형 광고 슬롯 레이아웃이 미리 잡혀있습니다. 
-1. `privacy.html`의 운영자 정보를 실제 본인 정보로 수정합니다.
-2. 구글 애드센스에서 고유 Publisher ID(`pub-0000000000000000`)를 발급받아 각 HTML 파일의 주석 처리된 스크립트 코드를 교체하고 주석을 해제합니다.
-3. 광고 단위 ID(`data-ad-slot`)를 교체하면 즉시 광고 수익 창출이 가능합니다.
-
 ---
 *© 2026 스무스펀. All Rights Reserved.*
