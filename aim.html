@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>미친 에임 트래킹 | 스무스펀</title>
+  <meta name="description" content="빛의 속도로 요동치는 타겟을 마우스로 쫓아가세요! 당신의 에임 피지컬은 어느 티어인가요?">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#080816; --surface:#0f0f28; --surface2:#181840;
+      --accent:#6c3aff; --cyan:#00d4ff; --pink:#ff3aac;
+      --gold:#ffd700; --text:#e8e8ff; --dim:#6060a0;
+      --green:#00ff88; --red:#ff4444; 
+    }
+    :root[data-theme="light"] {
+      --bg:#f0f2ff; --surface:#ffffff; --surface2:#e8eaff;
+      --accent:#5b2de0; --cyan:#0099cc; --pink:#cc2299;
+      --gold:#b8860b; --text:#1a1a3a; --dim:#8080b0;
+      --green:#00aa55; --red:#cc2222;
+    }
+    :root[data-theme="light"] body::before { background:none; }
+    
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family:'Outfit','Noto Sans KR',sans-serif;
+      background:var(--bg); color:var(--text);
+      min-height:100vh; overflow-x:hidden; 
+    }
+    body::before {
+      content:''; position:fixed; inset:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse at 50% 10%, rgba(0,212,255,.1) 0%, transparent 60%),
+        radial-gradient(ellipse at 50% 90%, rgba(108,58,255,.05) 0%, transparent 60%);
+      z-index: 0;
+    }
+
+    /* ── Header ── */
+    header { text-align:center; padding:3rem 1rem .5rem; z-index:1; position:relative; }
+    header h1 {
+      font-size:clamp(1.8rem,5vw,2.8rem); font-weight:900; line-height:1.2;
+      background:linear-gradient(135deg,var(--cyan),var(--green));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    header p { color:var(--dim); font-size:.9rem; margin-top:.4rem; }
+
+    .btn-home {
+      display: inline-block; position: absolute; left: 1rem; top: 1rem;
+      padding: .4rem .8rem; border-radius: 8px; font-size: .8rem; font-weight: 700;
+      color: var(--cyan); text-decoration: none; border: 1px solid rgba(0,212,255,.3);
+      transition: all .2s;
+    }
+    .btn-home:hover { background: rgba(0,212,255,.1); }
+
+    .pc-notice {
+      display: inline-block; margin-top: .8rem; font-size:.75rem; 
+      background: rgba(255,215,0,.1); border: 1px solid rgba(255,215,0,.3);
+      color: var(--gold); padding: .2rem .8rem; border-radius: 20px;
+    }
+
+    /* ── Game Info ── */
+    .info-bar {
+      display:flex; justify-content:space-between; align-items:flex-end;
+      width: min(700px, 100% - 2rem); margin: 1rem auto;
+      z-index:1; position:relative;
+    }
+    
+    .score-wrap {
+      display: flex; flex-direction: column; align-items: flex-start;
+    }
+    .score-label { font-size: .8rem; color: var(--dim); letter-spacing: 1px; font-weight: 700; margin-bottom: .2rem; }
+    .score-val { font-size: 2.5rem; font-weight: 900; color: #fff; line-height: 1; text-shadow: 0 0 10px rgba(255,255,255,.3); }
+    .score-val span { font-size: 1.2rem; color: var(--dim); }
+    
+    .timer-wrap { display: flex; flex-direction: column; align-items: flex-end; }
+    .timer-val { font-size: 2rem; font-weight: 900; color: var(--cyan); line-height: 1; font-variant-numeric: tabular-nums; }
+    .timer-bar-bg { width: 140px; height: 8px; background: rgba(255,255,255,.1); border-radius: 4px; margin-top: 8px; overflow: hidden; }
+    .timer-bar-fill { width: 100%; height: 100%; background: linear-gradient(90deg, var(--cyan), var(--accent)); transition: width 0.1s linear; }
+
+    /* ── Game Arena ── */
+    .arena-wrap {
+      width: min(100% - 2rem, 700px); margin: 0 auto;
+      background: var(--surface); border: 2px solid var(--surface2); border-radius: 20px;
+      position: relative; z-index: 1; height: 450px; overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,.4); cursor: crosshair;
+      touch-action: none; /* Prevent scrolling on mobile drag */
+    }
+    
+    .target {
+      position: absolute; width: 40px; height: 40px; border-radius: 50%;
+      background: var(--red);
+      transform: translate(-50%, -50%); pointer-events: none;
+      box-shadow: 0 0 15px var(--red), inset 0 0 10px rgba(255,255,255,.5);
+      transition: background 0.1s, box-shadow 0.1s, width 0.2s, height 0.2s;
+    }
+    
+    /* Target states */
+    .target.hovered {
+      background: var(--green); box-shadow: 0 0 25px var(--green), inset 0 0 15px rgba(255,255,255,.8);
+    }
+
+    .start-overlay {
+      position: absolute; inset: 0; background: rgba(15,15,40,.8); backdrop-filter: blur(4px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 5; border-radius: 18px;
+    }
+    .btn-start {
+      background: linear-gradient(135deg, var(--accent), var(--cyan));
+      color: #fff; font-size: 1.5rem; font-weight: 800; border: none;
+      padding: 1rem 3rem; border-radius: 50px; cursor: pointer;
+      box-shadow: 0 5px 20px rgba(108,58,255,.4); transition: transform 0.2s;
+    }
+    .btn-start:hover { transform: scale(1.05); }
+    .btn-start:active { transform: scale(0.95); }
+
+    .result-overlay {
+      position: absolute; inset: 0; background: rgba(15,15,40,.95); backdrop-filter: blur(5px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 10; border-radius: 18px; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .result-overlay.show { opacity: 1; pointer-events: auto; }
+    
+    .tier-badge {
+      font-size: 5rem; line-height: 1; margin-bottom: 0.5rem;
+      filter: drop-shadow(0 0 20px rgba(255,255,255,.2));
+    }
+    .result-title { font-size: 1.8rem; font-weight: 700; color: var(--dim); margin-bottom: 0.2rem; }
+    .result-tier-name { font-size: 2.8rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
+    .result-score { font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 2rem; background: rgba(255,255,255,.1); padding: .4rem 1.2rem; border-radius: 20px;}
+
+    /* ── Leaderboard ── */
+    .lb-section {
+      width:min(700px, 100% - 2rem); margin: 3rem auto 2rem;
+      background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08);
+      border-radius:16px; padding:1.5rem; position:relative; z-index:1;
+    }
+    .lb-header { text-align:center; margin-bottom:1rem; }
+    .lb-header h2 { font-size:1.4rem; color:var(--gold); display:flex; align-items:center; justify-content:center; gap:.5rem; }
+    .lb-tabs { display:flex; gap:.4rem; justify-content:center; margin-bottom:1rem; flex-wrap:wrap; }
+    .lb-tab {
+      background:transparent; border:1px solid rgba(255,255,255,.2); color:var(--dim);
+      padding:.3rem .8rem; border-radius:20px; font-size:.75rem; cursor:pointer; font-family:inherit; transition:all .2s;
+    }
+    .lb-tab.active { background:var(--gold); color:#000; border-color:var(--gold); font-weight:800; }
+    .lb-list { display:flex; flex-direction:column; gap:.4rem; min-height:150px; }
+    .lb-item {
+      display:flex; align-items:center; background:rgba(0,0,0,.3); padding:.6rem 1rem;
+      border-radius:10px; font-size:.9rem;
+    }
+    .lb-item.empty { justify-content:center; color:var(--dim); font-size:.8rem; font-style:italic; }
+    .lb-rank { width:24px; font-weight:900; color:var(--dim); }
+    .lb-item:nth-child(1) .lb-rank { color:var(--gold); }
+    .lb-item:nth-child(2) .lb-rank { color:#c0c0c0; }
+    .lb-item:nth-child(3) .lb-rank { color:#cd7f32; }
+    .lb-name { flex:1; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:1rem; }
+    .lb-score { font-family:monospace; font-size:.95rem; color:var(--cyan); font-weight:700; }
+
+    /* AdSense 사이드바 */
+    .ad-sidebar { position:fixed; top:50%; transform:translateY(-50%); width:160px; z-index:10; }
+    .ad-left  { left:8px; }
+    .ad-right { right:8px; }
+    @media (max-width:1300px) { .ad-sidebar { display:none; } }
+  </style>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1363977997493751" crossorigin="anonymous"></script>
+  <script src="security.js"></script>
+  <script src="theme.js"></script>
+  <script type="module" src="db.js"></script>
+  <meta name="google-adsense-account" content="ca-pub-1363977997493751">
+</head>
+<body>
+
+<div class="ad-sidebar ad-left">
+  <ins class="adsbygoogle" style="display:block;width:160px;height:600px"
+    data-ad-client="ca-pub-1363977997493751" data-ad-slot="XXXXXXXXXX"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+<div class="ad-sidebar ad-right">
+  <ins class="adsbygoogle" style="display:block;width:160px;height:600px"
+    data-ad-client="ca-pub-1363977997493751" data-ad-slot="XXXXXXXXXX"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
+
+<header>
+  <a href="index.html" class="btn-home">← 홈으로</a>
+  <h1>🎯 미친 에임 트래킹</h1>
+  <p>요동치는 타겟에 마우스 오버랩 상태를 오래 유지하세요!</p>
+  <div class="pc-notice">⚠️ PC에서 마우스를 사용하는 것을 권장합니다.</div>
+</header>
+
+<div class="info-bar">
+  <div class="score-wrap">
+    <div class="score-label">ACCURACY</div>
+    <div class="score-val" id="scoreDisp">0.0<span>%</span></div>
+  </div>
+  <div class="timer-wrap">
+    <div class="timer-val" id="timerDisp">20.0</div>
+    <div class="timer-bar-bg"><div class="timer-bar-fill" id="timerBar"></div></div>
+  </div>
+</div>
+
+<div class="arena-wrap" id="arena">
+  <div class="target" id="targetEl"></div>
+
+  <div class="start-overlay" id="startOverlay">
+    <button class="btn-start" onclick="startGame()">도전 시작</button>
+    <p style="margin-top:1.5rem;color:var(--dim);font-size:.85rem;text-align:center;">
+      시작하면 20초 안에 화면의 빨간 점을 쫓아가세요.<br>마우스가 점 위(Hover)에 있어야 퍼센티지가 오릅니다.
+    </p>
+  </div>
+  
+  <div class="result-overlay" id="resultOverlay">
+    <div class="tier-badge" id="tierEmoji">👑</div>
+    <div class="result-title">YOUR TIER</div>
+    <div class="result-tier-name" id="tierName">CHALLENGER</div>
+    <div class="result-score" id="finalScoreDisp">정확도 98.4%</div>
+    <button class="btn-start" onclick="startGame()" style="font-size:1.1rem;padding: .8rem 2rem;">다시 도전</button>
+  </div>
+</div>
+
+<div class="lb-section">
+  <div class="lb-header"><h2>🏆 에임 랭커 TOP 10</h2></div>
+  <div class="lb-tabs">
+    <button class="lb-tab active">통합 티어보드</button>
+  </div>
+  <div class="lb-list" id="lbList"><div class="lb-item empty">랭킹 불러오는 중...</div></div>
+</div>
+
+<script>
+const GAME_TIME = 20.0;
+const RADIUS = 25; // 50px width/height -> 25px radius physics wise
+
+// State
+let timeRemaining = 0;
+let hoverTime = 0;
+let isPlaying = false;
+let isHovered = false;
+
+// Physics tracking
+let tx = 350, ty = 225; // Target moving point
+let cx = 350, cy = 225; // Actual dot position
+let vx = 0, vy = 0; // Dot velocity
+let mouseX = -100, mouseY = -100;
+
+let lastTime = performance.now();
+let lastTargetChange = 0;
+let frameId;
+
+// Audio
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx, osc, hoverGain;
+
+function initAudio() {
+  if (hoverGain) return; // already inited
+  if (!audioCtx) audioCtx = new AudioContext();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  
+  // Create continuous spark/synth sound
+  osc = audioCtx.createOscillator();
+  hoverGain = audioCtx.createGain();
+  
+  osc.type = 'sawtooth';
+  osc.frequency.value = 80; // Low hum
+  
+  // add a little LFO to frequency for buzz
+  const lfo = audioCtx.createOscillator();
+  lfo.frequency.value = 15; // 15hz flutter
+  const lfoGain = audioCtx.createGain();
+  lfoGain.gain.value = 20;
+  lfo.connect(lfoGain);
+  lfoGain.connect(osc.frequency);
+  
+  hoverGain.gain.value = 0; // muted by default
+  
+  osc.connect(hoverGain);
+  hoverGain.connect(audioCtx.destination);
+  
+  osc.start();
+  lfo.start();
+}
+
+function updateAudio(hovering) {
+  if(!hoverGain || !audioCtx) return;
+  const now = audioCtx.currentTime;
+  if (hovering) {
+    hoverGain.gain.setTargetAtTime(0.1, now, 0.05); // ramp up
+    osc.frequency.setTargetAtTime(120, now, 0.1); // pitch up slight
+  } else {
+    hoverGain.gain.setTargetAtTime(0, now, 0.05); // ramp down
+    osc.frequency.setTargetAtTime(80, now, 0.1); // pitch down
+  }
+}
+
+function playResultSound(acc) {
+  if(!audioCtx) return;
+  const osc2 = audioCtx.createOscillator();
+  const g2 = audioCtx.createGain();
+  osc2.connect(g2);
+  g2.connect(audioCtx.destination);
+  
+  const now = audioCtx.currentTime;
+  if(acc > 80) { // Win sound
+    osc2.type = 'square';
+    osc2.frequency.setValueAtTime(400, now);
+    osc2.frequency.setValueAtTime(600, now+0.1);
+    osc2.frequency.setValueAtTime(1200, now+0.2);
+    g2.gain.setValueAtTime(0.1, now);
+    g2.gain.exponentialRampToValueAtTime(0.01, now+0.5);
+    osc2.start(now); osc2.stop(now+0.5);
+  } else { // Womp
+    osc2.type = 'sawtooth';
+    osc2.frequency.setValueAtTime(200, now);
+    osc2.frequency.exponentialRampToValueAtTime(50, now+0.4);
+    g2.gain.setValueAtTime(0.1, now);
+    g2.gain.exponentialRampToValueAtTime(0.01, now+0.4);
+    osc2.start(now); osc2.stop(now+0.4);
+  }
+}
+
+// References
+const arena = document.getElementById('arena');
+const targetEl = document.getElementById('targetEl');
+const scoreDisp = document.getElementById('scoreDisp');
+const timerDisp = document.getElementById('timerDisp');
+const timerBar = document.getElementById('timerBar');
+const startOverlay = document.getElementById('startOverlay');
+const resultOverlay = document.getElementById('resultOverlay');
+
+const tierEmoji = document.getElementById('tierEmoji');
+const tierName = document.getElementById('tierName');
+const finalScoreDisp = document.getElementById('finalScoreDisp');
+
+// Mouse tracking
+arena.addEventListener('mousemove', (e) => {
+  const rect = arena.getBoundingClientRect();
+  mouseX = e.clientX - rect.left;
+  mouseY = e.clientY - rect.top;
+});
+arena.addEventListener('touchmove', (e) => {
+  if (e.touches.length > 0) {
+    const rect = arena.getBoundingClientRect();
+    mouseX = e.touches[0].clientX - rect.left;
+    mouseY = e.touches[0].clientY - rect.top;
+  }
+}, {passive: false});
+
+function getRank(acc) {
+  if(acc >= 96) return {name:'Challenger', color:'#00d4ff', emoji:'👑'};
+  if(acc >= 86) return {name:'Diamond', color:'#a64aff', emoji:'💎'};
+  if(acc >= 71) return {name:'Platinum', color:'#00ff88', emoji:'💍'};
+  if(acc >= 56) return {name:'Gold', color:'#ffd700', emoji:'🥇'};
+  if(acc >= 41) return {name:'Silver', color:'#c0c0c0', emoji:'🥈'};
+  if(acc >= 21) return {name:'Bronze', color:'#cd7f32', emoji:'🥉'};
+  return {name:'Iron', color:'#666666', emoji:'🪨'};
+}
+
+function startGame() {
+  initAudio();
+  timeRemaining = GAME_TIME;
+  hoverTime = 0;
+  isPlaying = true;
+  
+  startOverlay.style.display = 'none';
+  resultOverlay.classList.remove('show');
+  
+  // reset phys
+  const aw = arena.clientWidth;
+  const ah = arena.clientHeight;
+  cx = aw / 2; cy = ah / 2;
+  tx = cx; ty = cy;
+  vx = 0; vy = 0;
+  mouseX = -100; mouseY = -100; // Unset
+  
+  lastTime = performance.now();
+  frameId = requestAnimationFrame(tick);
+}
+
+function getRandomTarget() {
+  const aw = arena.clientWidth;
+  const ah = arena.clientHeight;
+  // Margins so it doesn't go completely off edge
+  const margin = 40;
+  return {
+    x: margin + Math.random() * (aw - margin * 2),
+    y: margin + Math.random() * (ah - margin * 2)
+  };
+}
+
+function tick(now) {
+  if(!isPlaying) return;
+  
+  let dt = (now - lastTime) / 1000;
+  if (dt > 0.1) dt = 0.1; // clamp dt to prevent physics explosion if tab inactive
+  lastTime = now;
+  
+  // 1. Time management
+  timeRemaining -= dt;
+  if(timeRemaining <= 0) {
+    timeRemaining = 0;
+    endGame();
+  }
+  
+  // 2. Physics & Logic
+  // Change virtual target 'tx, ty' erratically
+  if(now - lastTargetChange > 200 + Math.random() * 400) { // every 200-600ms
+    const point = getRandomTarget();
+    tx = point.x;
+    ty = point.y;
+    lastTargetChange = now;
+    
+    // Sometimes add a sudden velocity spike (jump)
+    if(Math.random() < 0.3) {
+      vx += (Math.random() - 0.5) * 600;
+      vy += (Math.random() - 0.5) * 600;
+    }
+  }
+  
+  // Acceleration towards virtual target
+  const ax = (tx - cx);
+  const ay = (ty - cy);
+  // Base speed + random frenzy scaling as time goes down
+  const frenzy = 1 + ((GAME_TIME - timeRemaining) / GAME_TIME) * 1.5; // Up to 2.5x speed multiplier over time
+  
+  vx += ax * 4.0 * dt * frenzy;
+  vy += ay * 4.0 * dt * frenzy;
+  
+  // Friction
+  vx *= 0.88;
+  vy *= 0.88;
+  
+  cx += vx * dt;
+  cy += vy * dt;
+  
+  // Clamp to bounds
+  const w = arena.clientWidth;
+  const h = arena.clientHeight;
+  if(cx < RADIUS) { cx = RADIUS; vx *= -0.8; }
+  if(cx > w - RADIUS) { cx = w - RADIUS; vx *= -0.8; }
+  if(cy < RADIUS) { cy = RADIUS; vy *= -0.8; }
+  if(cy > h - RADIUS) { cy = h - RADIUS; vy *= -0.8; }
+  
+  targetEl.style.left = cx + 'px';
+  targetEl.style.top = cy + 'px';
+  
+  // 3. Hover Detection
+  const dist = Math.hypot(cx - mouseX, cy - mouseY);
+  // Allow slightly larger hit radius than visuals (generous hitbox)
+  const hitRadius = RADIUS + 10; 
+  
+  if(dist < hitRadius) {
+    if(!isHovered) {
+      isHovered = true;
+      targetEl.classList.add('hovered');
+      updateAudio(true);
+    }
+    hoverTime += dt;
+  } else {
+    if(isHovered) {
+      isHovered = false;
+      targetEl.classList.remove('hovered');
+      updateAudio(false);
+    }
+  }
+  
+  // 4. Update UI
+  const acc = Math.min((hoverTime / (GAME_TIME - timeRemaining)) * 100, 100) || 0;
+  scoreDisp.innerHTML = `${acc.toFixed(1)}<span>%</span>`;
+  
+  timerDisp.innerText = timeRemaining.toFixed(1);
+  timerBar.style.width = `${(timeRemaining / GAME_TIME) * 100}%`;
+  
+  if(isPlaying) {
+    frameId = requestAnimationFrame(tick);
+  }
+}
+
+function endGame() {
+  isPlaying = false;
+  isHovered = false;
+  updateAudio(false);
+  targetEl.classList.remove('hovered');
+  
+  const finalAcc = Math.min((hoverTime / GAME_TIME) * 100, 100);
+  const rank = getRank(finalAcc);
+  
+  playResultSound(finalAcc);
+  
+  tierEmoji.innerText = rank.emoji;
+  tierName.innerText = rank.name;
+  tierName.style.color = rank.color;
+  finalScoreDisp.innerHTML = `정확도 <b>${finalAcc.toFixed(2)}%</b>`;
+  
+  resultOverlay.classList.add('show');
+  
+  // Save Score
+  setTimeout(async () => {
+    if (!window.dbAPI) return;
+    const isTop = await window.dbAPI.isTop10('aim', 'all', finalAcc, 'desc');
+    if (isTop) {
+      const name = window.dbAPI.getGuestId();
+      await window.dbAPI.saveScore('aim', 'all', name, finalAcc, `${finalAcc.toFixed(1)}% (${rank.name})`, 'desc');
+      loadLeaderboard();
+    }
+  }, 500);
+}
+
+// ── Leaderboard Logic ─────────────────────
+function loadLeaderboard() {
+  const list = document.getElementById('lbList');
+  list.innerHTML = '<div class="lb-item empty">데이터를 불러오는 중...</div>';
+  
+  if (!window.dbAPI) { setTimeout(loadLeaderboard, 100); return; }
+  window.dbAPI.getTop10('aim', 'all', 'desc').then(data => {
+    if (!data || data.length === 0) { list.innerHTML = '<div class="lb-item empty">아직 기록이 없습니다. 첫 랭커가 되어보세요!</div>'; return; }
+    list.innerHTML = data.map((d, i) => `
+      <div class="lb-item">
+        <span class="lb-rank">${i+1}</span>
+        <span class="lb-name">${d.name}</span>
+        <span class="lb-score">${d.extraText}</span>
+      </div>`).join('');
+  });
+}
+loadLeaderboard();
+</script>
+</body>
+</html>
