@@ -455,12 +455,14 @@ function updateDodge(dt) {
   // Spawn Enemy
   enemySpawnTimer -= dt;
   if (enemySpawnTimer <= 0) {
-    const w = 20 + Math.random() * 40;
-    const h = 20 + Math.random() * 20;
-    const x = Math.random() * (cw - w);
+    const size = 30 + Math.random() * 20; // 30~50px
+    const x = Math.random() * (cw - size);
     const speed = 150 + Math.random() * 100 + (aliveMs / 1000) * 10; // slowly gets faster
     
-    enemies.push({ x, y: -h, w, h, speed, color: '#ff3aac' });
+    const ems = ['💣', '☄️', '👾', '☠️', '🦇'];
+    const emoji = ems[Math.floor(Math.random() * ems.length)];
+    
+    enemies.push({ x, y: -size, w: size, h: size, speed, emoji });
     
     // Rate gets faster over time (min 0.2)
     enemySpawnRate = Math.max(0.18, 0.6 - (aliveMs / 1000) * 0.015);
@@ -487,13 +489,13 @@ function updateDodge(dt) {
 function drawDodge() {
   ctx.clearRect(0, 0, cw, ch);
   
-  // Draw enemies
+  // Draw enemies (Emojis)
+  ctx.shadowBlur = 0; // Turn off glow for emojis
   for (let e of enemies) {
-    ctx.fillStyle = e.color;
-    // Neon glow effect disabled for performance, but we can fake it with simple fill
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = e.color;
-    ctx.fillRect(e.x, e.y, e.w, e.h);
+    ctx.font = `${e.w * 0.9}px "Noto Sans KR", Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(e.emoji, e.x + e.w/2, e.y + e.h/2);
   }
   
   // Draw player
