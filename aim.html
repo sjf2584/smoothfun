@@ -267,20 +267,22 @@ function playResultSound(acc) {
   g2.connect(audioCtx.destination);
   
   const now = audioCtx.currentTime;
+  const vol = (typeof window.masterVolume !== 'undefined' ? window.masterVolume : 0.5);
+
   if(acc > 80) { // Win sound
     osc2.type = 'square';
     osc2.frequency.setValueAtTime(400, now);
     osc2.frequency.setValueAtTime(600, now+0.1);
     osc2.frequency.setValueAtTime(1200, now+0.2);
-    g2.gain.setValueAtTime(0.1, now);
-    g2.gain.exponentialRampToValueAtTime(0.01, now+0.5);
+    g2.gain.setValueAtTime(0.1 * vol, now);
+    g2.gain.exponentialRampToValueAtTime(0.01 * vol, now+0.5);
     osc2.start(now); osc2.stop(now+0.5);
   } else { // Womp
     osc2.type = 'sawtooth';
     osc2.frequency.setValueAtTime(200, now);
     osc2.frequency.exponentialRampToValueAtTime(50, now+0.4);
-    g2.gain.setValueAtTime(0.1, now);
-    g2.gain.exponentialRampToValueAtTime(0.01, now+0.4);
+    g2.gain.setValueAtTime(0.1 * vol, now);
+    g2.gain.exponentialRampToValueAtTime(0.01 * vol, now+0.4);
     osc2.start(now); osc2.stop(now+0.4);
   }
 }
