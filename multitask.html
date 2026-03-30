@@ -216,10 +216,7 @@
     <div class="panel dodge-wrap" id="dodgeZone">
       <div class="panel-bg-title">DODGE!</div>
       <canvas id="gameCanvas"></canvas>
-      <div class="dodge-controls">
-        <div class="dodge-btn" id="btnLeft"></div>
-        <div class="dodge-btn" id="btnRight"></div>
-      </div>
+      <div class="dodge-controls" id="dodgeControls"></div>
     </div>
 
     <!-- Math Game (Right) -->
@@ -241,7 +238,7 @@
     <div style="font-size:3rem; margin-bottom:1rem;" id="overlayIcon">🤹</div>
     <div style="font-size:2rem; font-weight:900; color:var(--text); margin-bottom:0.5rem;" id="overlayTitle">극한의 뇌지컬 테스트</div>
     <div style="color:var(--dim); font-size:1rem; line-height:1.6;" id="overlayDesc">
-      <b>[왼쪽 패널]</b> 떨어지는 블록을 피하세요. (A, D키 또는 화면 좌우 터치)<br>
+      <b>[왼쪽 패널]</b> 사방에서 날아오는 블록을 피하세요. (WASD키 또는 빈 공간 드래그)<br>
       <b>[오른쪽 패널]</b> 4초 안에 사칙연산 정답을 누르세요.<br>
       뭐 하나라도 삐끗하면 <b>즉시 사망</b>합니다.
     </div>
@@ -396,7 +393,9 @@ let enemySpawnTimer = 0;
 let enemySpawnRate = 0.6; // every 0.6s
 
 // Input
-let keys = { a: false, d: false, ArrowLeft: false, ArrowRight: false };
+let keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+let touchTarget = null;
+let isDragging = false;
 
 function resizeCanvas() {
   const rect = canvas.parentNode.getBoundingClientRect();
@@ -404,12 +403,15 @@ function resizeCanvas() {
   canvas.height = rect.height;
   cw = canvas.width;
   ch = canvas.height;
-  player.y = ch - player.h - 10; // keep at bottom
-  if (player.x === 0) player.x = cw / 2 - player.w / 2; // init center
+  // Initialize to center
+  if (player.x === 0 && player.y === 0) {
+    player.x = cw / 2 - player.w / 2;
+    player.y = ch / 2 - player.h / 2;
+  }
 }
 window.addEventListener('resize', resizeCanvas);
 
-// Controls
+// Controls (Keyboard)
 document.addEventListener('keydown', (e) => {
   if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
 });
@@ -417,20 +419,22 @@ document.addEventListener('keyup', (e) => {
   if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
 });
 
-// Touch controls for mobile dodge
-const btnLeft = document.getElementById('btnLeft');
-const btnRight = document.getElementById('btnRight');
-btnLeft.addEventListener('touchstart', (e)=>{ e.preventDefault(); keys.a = true; }, {passive:false});
-btnLeft.addEventListener('touchend', (e)=>{ e.preventDefault(); keys.a = false; }, {passive:false});
-btnLeft.addEventListener('mousedown', (e)=>{ e.preventDefault(); keys.a = true; });
-btnLeft.addEventListener('mouseup', (e)=>{ e.preventDefault(); keys.a = false; });
-btnLeft.addEventListener('mouseleave', (e)=>{ keys.a = false; });
+// Controls (Touch/Mouse Joystick)
+const dodgeControls = document.getElementById('dodgeControls');
+function getTouchPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const t = e.touches ? e.touches[0] : e;
+  return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+}
 
-btnRight.addEventListener('touchstart', (e)=>{ e.preventDefault(); keys.d = true; }, {passive:false});
-btnRight.addEventListener('touchend', (e)=>{ e.preventDefault(); keys.d = false; }, {passive:false});
-btnRight.addEventListener('mousedown', (e)=>{ e.preventDefault(); keys.d = true; });
-btnRight.addEventListener('mouseup', (e)=>{ e.preventDefault(); keys.d = false; });
-btnRight.addEventListener('mouseleave', (e)=>{ keys.d = false; });
+dodgeControls.addEventListener('touchstart', (e)=>{ e.preventDefault(); isDragging=true; touchTarget=getTouchPos(e); }, {passive:false});
+dodgeControls.addEventListener('touchmove', (e)=>{ e.preventDefault(); if(isDragging) touchTarget=getTouchPos(e); }, {passive:false});
+dodgeControls.addEventListener('touchend', (e)=>{ e.preventDefault(); isDragging=false; touchTarget=null; }, {passive:false});
+
+dodgeControls.addEventListener('mousedown', (e)=>{ e.preventDefault(); isDragging=true; touchTarget=getTouchPos(e); });
+dodgeControls.addEventListener('mousemove', (e)=>{ if(isDragging) touchTarget=getTouchPos(e); });
+dodgeControls.addEventListener('mouseup', ()=>{ isDragging=false; touchTarget=null; });
+dodgeControls.addEventListener('mouseleave', ()=>{ isDragging=false; touchTarget=null; });
 
 function initDodge() {
   resizeCanvas();
@@ -442,37 +446,70 @@ function initDodge() {
 
 function updateDodge(dt) {
   // Movement
-  let dir = 0;
-  if (keys.a || keys.ArrowLeft) dir -= 1;
-  if (keys.d || keys.ArrowRight) dir += 1;
+  let dirX = 0; let dirY = 0;
+  if (keys.a || keys.ArrowLeft) dirX -= 1;
+  if (keys.d || keys.ArrowRight) dirX += 1;
+  if (keys.w || keys.ArrowUp) dirY -= 1;
+  if (keys.s || keys.ArrowDown) dirY += 1;
   
-  player.x += dir * player.speed * dt;
+  if (dirX !== 0 || dirY !== 0) {
+    const len = Math.hypot(dirX, dirY);
+    player.x += (dirX / len) * player.speed * dt;
+    player.y += (dirY / len) * player.speed * dt;
+    touchTarget = null; // Keyboard overrides touch
+  } else if (touchTarget) {
+    // Offset Y by -50px so finger doesn't obscure player
+    const targetX = touchTarget.x - player.w / 2;
+    const targetY = touchTarget.y - player.h / 2 - 50;
+    
+    // Smooth lerp
+    player.x += (targetX - player.x) * 15 * dt;
+    player.y += (targetY - player.y) * 15 * dt;
+  }
   
   // Boundary
   if (player.x < 0) player.x = 0;
   if (player.x + player.w > cw) player.x = cw - player.w;
+  if (player.y < 0) player.y = 0;
+  if (player.y + player.h > ch) player.y = ch - player.h;
   
   // Spawn Enemy
   enemySpawnTimer -= dt;
   if (enemySpawnTimer <= 0) {
     const size = 30 + Math.random() * 20; // 30~50px
-    const x = Math.random() * (cw - size);
-    const speed = 150 + Math.random() * 100 + (aliveMs / 1000) * 10; // slowly gets faster
+    const speed = 150 + Math.random() * 100 + (aliveMs / 1000) * 12; // slowly gets faster
+    
+    // Pick side: 0=Top, 1=Right, 2=Bottom, 3=Left
+    const side = Math.floor(Math.random() * 4);
+    let ex, ey;
+    if (side === 0) { ex = Math.random() * cw; ey = -size; }
+    else if (side === 1) { ex = cw + size; ey = Math.random() * ch; }
+    else if (side === 2) { ex = Math.random() * cw; ey = ch + size; }
+    else { ex = -size; ey = Math.random() * ch; }
+    
+    // Aim roughly towards the center or randomly across
+    const targetX = cw / 2 + (Math.random() - 0.5) * cw * 1.5;
+    const targetY = ch / 2 + (Math.random() - 0.5) * ch * 1.5;
+    const angle = Math.atan2(targetY - ey, targetX - ex);
+    
+    const vx = Math.cos(angle) * speed;
+    const vy = Math.sin(angle) * speed;
     
     const ems = ['💣', '☄️', '👾', '☠️', '🦇'];
     const emoji = ems[Math.floor(Math.random() * ems.length)];
     
-    enemies.push({ x, y: -size, w: size, h: size, speed, emoji });
+    enemies.push({ x: ex, y: ey, vx, vy, w: size, h: size, emoji });
     
-    // Rate gets faster over time (min 0.2)
-    enemySpawnRate = Math.max(0.18, 0.6 - (aliveMs / 1000) * 0.015);
+    // Rate gets faster over time (min 0.12)
+    enemySpawnRate = Math.max(0.12, 0.45 - (aliveMs / 1000) * 0.015);
     enemySpawnTimer = enemySpawnRate;
   }
   
   // Move Enemies & Check collision
   for (let i = enemies.length - 1; i >= 0; i--) {
     let e = enemies[i];
-    e.y += e.speed * dt;
+    e.x += e.vx * dt;
+    e.y += e.vy * dt;
     
     // Collision AABB
     if (player.x < e.x + e.w && player.x + player.w > e.x &&
@@ -482,7 +519,10 @@ function updateDodge(dt) {
       return;
     }
     
-    if (e.y > ch) enemies.splice(i, 1);
+    // Remove if far out of bounds
+    if (e.x < -150 || e.x > cw + 150 || e.y < -150 || e.y > ch + 150) {
+      enemies.splice(i, 1);
+    }
   }
 }
 
