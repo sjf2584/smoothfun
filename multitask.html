@@ -147,6 +147,16 @@
     .btn-start:hover { transform: scale(1.05); }
     .btn-start:active { transform: scale(0.95); }
 
+    .level-up-toast {
+      position: absolute; top: 10%; left: 50%; transform: translateX(-50%) scale(0.5);
+      background: linear-gradient(135deg, var(--accent), var(--pink));
+      padding: 0.8rem 2.5rem; border-radius: 50px; font-size: 2rem; font-weight: 900;
+      color: #fff; font-style: italic; opacity: 0; pointer-events: none;
+      box-shadow: 0 10px 30px rgba(255,58,172,.4); z-index: 100;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .level-up-toast.show { opacity: 1; transform: translateX(-50%) scale(1.0); }
+
     /* ── Leaderboard ── */
     .lb-section {
       width:min(900px, 100% - 1rem); margin: 3rem auto 2rem;
@@ -244,6 +254,8 @@
     </div>
     <button class="btn-start" onclick="startGame()" id="startBtn">도전 시작</button>
   </div>
+  
+  <div class="level-up-toast" id="levelUpToast">LEVEL UP 🚀</div>
 </div>
 
 <div class="lb-section">
@@ -285,6 +297,18 @@ function playSound(type) {
     gain.gain.setValueAtTime(0.3, now);
     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
     osc.start(now); osc.stop(now + 0.5);
+  } else if (type === 'levelup') {
+    // Arcade Level UP Arpeggio
+    const freqs = [400, 500, 600, 800];
+    freqs.forEach((f, i) => {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'square'; o.frequency.value = f;
+      o.connect(g); g.connect(audioCtx.destination);
+      g.gain.setValueAtTime(0.05, now + i * 0.1);
+      g.gain.linearRampToValueAtTime(0, now + i * 0.1 + 0.1);
+      o.start(now + i * 0.1); o.stop(now + i * 0.1 + 0.1);
+    });
   }
 }
 
@@ -293,6 +317,7 @@ let isPlaying = false;
 let aliveMs = 0;
 let lastTime = 0;
 let frameId;
+let currentLevel = 0;
 
 // --- Math System ---
 let mathTimeMax = 4.0;
@@ -477,7 +502,7 @@ function updateDodge(dt) {
   enemySpawnTimer -= dt;
   if (enemySpawnTimer <= 0) {
     const size = 30 + Math.random() * 20; // 30~50px
-    const speed = 150 + Math.random() * 100 + (aliveMs / 1000) * 12; // slowly gets faster
+    const speed = 150 + Math.random() * 100 + (currentLevel * 100); // Level step speed
     
     // Pick side: 0=Top, 1=Right, 2=Bottom, 3=Left
     const side = Math.floor(Math.random() * 4);
@@ -500,8 +525,8 @@ function updateDodge(dt) {
     
     enemies.push({ x: ex, y: ey, vx, vy, w: size, h: size, emoji });
     
-    // Rate gets faster over time (min 0.12)
-    enemySpawnRate = Math.max(0.12, 0.45 - (aliveMs / 1000) * 0.015);
+    // Rate drops by 0.08s every level (min 0.12)
+    enemySpawnRate = Math.max(0.12, 0.5 - (currentLevel * 0.08));
     enemySpawnTimer = enemySpawnRate;
   }
   
@@ -553,6 +578,7 @@ window.startGame = function() {
   
   isPlaying = true;
   aliveMs = 0;
+  currentLevel = 0;
   mathSolved = 0;
   mathScoreDisp.innerText = '0';
   document.getElementById('globalOverlay').classList.add('overlay-hide');
@@ -571,6 +597,17 @@ function tick(now) {
   lastTime = now;
   
   aliveMs += dt * 1000;
+  
+  // 15초 단위 계단식 레벨업 시스템
+  const newLevel = Math.floor(aliveMs / 15000);
+  if (newLevel > currentLevel) {
+    currentLevel = newLevel;
+    playSound('levelup');
+    const toast = document.getElementById('levelUpToast');
+    toast.innerText = `LEVEL ${currentLevel + 1} UP! 🚀`;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+  }
   
   // Math Timer update
   mathTimeLeft -= dt;
