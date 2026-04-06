@@ -202,6 +202,7 @@
     .rank-3 { color:#CD7F32; }
 
     :root[data-theme="light"] .lb-tab { background:#fff; border-color:#e0e0e0; }
+    :root[data-theme="light"] .lb-tab.active { background:var(--gold); color:#000; border-color:var(--gold); }
     :root[data-theme="light"] .lb-list { background:#fff; box-shadow:0 10px 30px rgba(0,0,0,.05); }
     :root[data-theme="light"] .lb-item { border-bottom:1px solid #f0f0f0; color:#444; }
   
@@ -581,7 +582,7 @@ function loadLeaderboard(cat = currentLbCat) {
     list.innerHTML = data.map((d, i) => `
       <div class="lb-item">
         <span class="${i<3?'rank-'+(i+1):''}">${i+1}. ${d.name}</span>
-        <span style="color:var(--cyan)">${d.displayValue}</span>
+        <span style="color:var(--cyan)">${d.extraText}</span>
       </div>
     `).join('');
   }).catch(() => {
