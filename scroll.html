@@ -307,7 +307,7 @@ function startBGM() {
   bgSource.loop = true;
   const gain = audioCtx.createGain();
   const vol = (typeof window.masterVolume !== 'undefined' ? window.masterVolume : 0.5);
-  gain.gain.value = 0.5 * vol; 
+  gain.gain.value = 1.0 * vol; 
   bgSource.connect(gain);
   gain.connect(audioCtx.destination);
   bgSource.start();
