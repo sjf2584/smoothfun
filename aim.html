@@ -254,11 +254,94 @@ let frameId;
 // Audio
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
+let bgBuffer, bgSource;
+
+function generateBGM() {
+  const sampleRate = audioCtx.sampleRate || 44100;
+  const loopDuration = 19.2; 
+  const buffer = audioCtx.createBuffer(1, Math.floor(sampleRate * loopDuration), sampleRate);
+  const data = buffer.getChannelData(0);
+  for(let i=0; i<data.length; i++) data[i] = 0;
+
+  function renderVoice(notes, noteDuration, vol, synthType, envelopeDecay) {
+    for (let i = 0; i < Math.min(data.length, Math.floor(notes.length * noteDuration * sampleRate)); i++) {
+      const t = i / sampleRate;
+      const noteIdx = Math.floor(t / noteDuration);
+      const freq = notes[noteIdx];
+      if (!freq) continue;
+      
+      const tNote = t % noteDuration;
+      const env = Math.max(0, 1 - (tNote * envelopeDecay)); 
+      if (env <= 0) continue;
+
+      let wave = 0;
+      if (synthType === 'square') wave = Math.sin(2 * Math.PI * freq * t) > 0 ? 1 : -1;
+      else if (synthType === 'sawtooth') wave = 2 * ((freq * t) % 1) - 1;
+      
+      data[i] += wave * env * vol;
+    }
+  }
+
+  const bs1 = [82.41, 164.81, 82.41, 164.81, 82.41, 164.81, 82.41, 164.81, 82.41, 164.81, 82.41, 164.81, 98.00, 110.00, 123.47, 146.83];
+  const bs2 = [65.41, 130.81, 65.41, 130.81, 65.41, 130.81, 65.41, 130.81, 65.41, 130.81, 65.41, 130.81, 82.41, 98.00, 110.00, 130.81];
+  const bs3 = [73.42, 146.83, 73.42, 146.83, 73.42, 146.83, 73.42, 146.83, 73.42, 146.83, 73.42, 146.83, 92.50, 110.00, 123.47, 146.83];
+  const bs4 = [61.74, 123.47, 61.74, 123.47, 61.74, 123.47, 61.74, 123.47, 61.74, 123.47, 61.74, 123.47, 77.78, 92.50, 110.00, 123.47];
+  const blockBass = [...bs1, ...bs2, ...bs3, ...bs4]; 
+
+  const md1 = [329.63, 0, 392.00, 0, 440.00, 0, 493.88, 329.63, 0, 392.00, 0, 587.33, 0, 659.25, 0, 0];
+  const md2 = [261.63, 0, 329.63, 0, 392.00, 0, 440.00, 261.63, 0, 329.63, 0, 523.25, 0, 587.33, 0, 0];
+  const md3 = [293.66, 0, 370.00, 0, 440.00, 0, 523.25, 293.66, 0, 370.00, 0, 587.33, 0, 659.25, 0, 0];
+  const md4 = [246.94, 0, 311.13, 0, 370.00, 0, 493.88, 246.94, 0, 311.13, 0, 493.88, 0, 587.33, 0, 0];
+  const blockMelody = [...md1, ...md2, ...md3, ...md4]; 
+
+  const arp = [
+    329.63, 392.00, 493.88, 659.25, 493.88, 392.00,
+    261.63, 329.63, 392.00, 523.25, 392.00, 329.63,
+    293.66, 370.00, 440.00, 587.33, 440.00, 370.00,
+    246.94, 311.13, 370.00, 493.88, 370.00, 311.13
+  ];
+  let fullArp = [];
+  for(let i=0; i<8; i++) fullArp.push(...arp);
+  
+  const tBass = [...blockBass, ...blockBass, ...blockBass.map(f=>Math.min(f*1.5, 2000))];
+  const silence = Array(64).fill(0);
+  const tMelody = [...silence, ...blockMelody, ...blockMelody.map(f=>Math.min(f*1.5, 2000))];
+  const tArp = [...fullArp.slice(0, 64), ...fullArp.slice(0, 64), ...fullArp.slice(0, 64).map(f=>Math.min(f*2, 3000))];
+
+  renderVoice(tBass, 0.1, 0.05, 'square', 18);
+  renderVoice(tArp, 0.1, 0.015, 'sawtooth', 8);
+  renderVoice(tMelody, 0.1, 0.03, 'square', 12);
+
+  return buffer;
+}
 
 function initAudio() {
-  if (audioCtx) return; // already inited
+  if (audioCtx) return;
   audioCtx = new AudioContext();
   if (audioCtx.state === 'suspended') audioCtx.resume();
+  bgBuffer = generateBGM();
+}
+
+function startBGM() {
+  if (!audioCtx || !bgBuffer) return;
+  stopBGM();
+  bgSource = audioCtx.createBufferSource();
+  bgSource.buffer = bgBuffer;
+  bgSource.loop = true;
+  const gain = audioCtx.createGain();
+  const vol = (typeof window.masterVolume !== 'undefined' ? window.masterVolume : 0.5);
+  gain.gain.value = 0.5 * vol; 
+  bgSource.connect(gain);
+  gain.connect(audioCtx.destination);
+  bgSource.start();
+}
+
+function stopBGM() {
+  if (bgSource) {
+    try { bgSource.stop(); } catch(e){}
+    bgSource.disconnect();
+    bgSource = null;
+  }
 }
 
 function updateAudio(hovering) {
@@ -332,6 +415,7 @@ function getRank(acc) {
 
 function startGame() {
   initAudio();
+  startBGM();
   timeRemaining = GAME_TIME;
   hoverTime = 0;
   isPlaying = true;
@@ -453,6 +537,7 @@ function tick(now) {
 function endGame() {
   isPlaying = false;
   isHovered = false;
+  stopBGM();
   updateAudio(false);
   targetEl.classList.remove('hovered');
   

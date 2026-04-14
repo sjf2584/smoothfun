@@ -350,12 +350,10 @@ function startGame() {
     p.innerText = ''; // Remove "진행중..."
   });
   
-  // Update Buttons Names Randomly to add confusion? (No, keeping pad text empty or normal)
-  // We will keep pads as solid colors without texts. The buttons already have specific CSS colors.
-  
   nextWord();
   
   lastTime = performance.now();
+  if(frameId) cancelAnimationFrame(frameId);
   frameId = requestAnimationFrame(tick);
 }
 
@@ -424,12 +422,11 @@ function tick(now) {
   lastTime = now;
   
   timeRemaining -= delta;
-  
   if (timeRemaining <= 0) {
     timeRemaining = 0;
     endGame();
+    return;
   }
-  
   timerDisp.innerText = timeRemaining.toFixed(1);
   timerBar.style.width = `${(timeRemaining / GAME_TIME) * 100}%`;
   
