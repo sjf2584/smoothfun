@@ -20,6 +20,8 @@
       --gold:#b8860b; --text:#1a1a3a; --dim:#8080b0;
       --green:#00aa55; --red:#cc2222;
     }
+    :root[data-theme="light"] .lb-warning { color:#cc2222; background:rgba(204,34,34,.1); border-color:rgba(204,34,34,.3); }
+
     :root[data-theme="light"] body::before { background:none; }
     :root[data-theme="light"] .pad { background:#ffffff; box-shadow:0 15px 35px rgba(0,0,0,.1), inset 0 0 0 8px rgba(91,45,224,.1); }
     :root[data-theme="light"] .tog-btn { background:#f0f2ff; color:var(--text); border-color:rgba(0,0,0,.15); }
@@ -298,6 +300,12 @@
     @media (max-width:1300px) {  }
 
     /* ── Leaderboard ── */
+    .lb-warning {
+      background:rgba(255,68,68,.1); border:1px solid rgba(255,68,68,.3);
+      color:#ffaaaa; font-size:.75rem; padding:.8rem; border-radius:8px;
+      margin-bottom:1.5rem; line-height:1.4; text-align:center; word-break:keep-all;
+    }
+
     .lb-section {
       width:min(600px, 100% - 2rem); margin: 2rem auto 2rem;
       background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08);
@@ -424,6 +432,7 @@
 
 
 <div class="lb-section">
+  <div class="lb-warning">⚠️ <b>정정당당한 승부!</b><br>클라이언트 변조를 통한 비정상적인 스코어 조작은 모든 참여자의 재미를 반감시킵니다. 양심적인 플레이를 부탁드립니다.</div>
   <div class="lb-header"><h2>🏆 명예의 전당</h2></div>
   <div class="lb-tabs" id="lbTabs">
     <button class="lb-tab active" data-cat="echo_normal">Normal 모드</button>

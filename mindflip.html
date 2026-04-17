@@ -20,6 +20,8 @@
       --gold:#b8860b; --text:#1a1a3a; --dim:#8080b0;
       --green:#00aa55; --red:#cc2222; --blue:#0055ff;
     }
+    :root[data-theme="light"] .lb-warning { color:#cc2222; background:rgba(204,34,34,.1); border-color:rgba(204,34,34,.3); }
+
 
     * { box-sizing:border-box; margin:0; padding:0; user-select:none; }
     body {
@@ -212,7 +214,14 @@
     .ad-left  { left: calc(50% - 550px); }
     .ad-right { right: calc(50% - 550px); }
     @media (max-width: 1150px) { .ad-sidebar { display:none !important; } }
-  </style>
+  
+    .lb-warning {
+      background:rgba(255,68,68,.1); border:1px solid rgba(255,68,68,.3);
+      color:#ffaaaa; font-size:.75rem; padding:.8rem; border-radius:8px;
+      margin-bottom:1.5rem; line-height:1.4; text-align:center; word-break:keep-all;
+    }
+
+</style>
   <script src="security.js"></script>
   <script type="module" src="db.js"></script>
   <script src="theme.js"></script>
@@ -265,6 +274,7 @@
 </div>
 
 <div class="lb-section">
+  <div class="lb-warning">⚠️ <b>정정당당한 승부!</b><br>클라이언트 변조를 통한 비정상적인 스코어 조작은 모든 참여자의 재미를 반감시킵니다. 양심적인 플레이를 부탁드립니다.</div>
   <div class="lb-header"><h2>🏆 명예의 전당</h2></div>
   <div class="lb-tabs" id="lbTabs">
     <button class="lb-tab active" data-cat="mindflip_normal">Normal 모드</button>
