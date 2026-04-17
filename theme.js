@@ -4,7 +4,7 @@
   const VOL_KEY = 'sf_master_volume';
   const GUEST_KEY = 'sf_guest_id';
   
-  const stored = localStorage.getItem(KEY) || 'dark';
+  const stored = localStorage.getItem(KEY) || 'light';
   
   // 마스터 볼륨 로드 (기본값 50%)
   window.masterVolume = parseFloat(localStorage.getItem(VOL_KEY));
