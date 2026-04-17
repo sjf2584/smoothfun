@@ -8,6 +8,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root { --bg:#080816;--surface:#0f0f28;--accent:#6c3aff;--cyan:#00d4ff;--text:#e8e8ff;--dim:#8080b0; }
+    :root[data-theme="light"] { --bg:#f0f2ff;--surface:#ffffff;--accent:#5b2de0;--cyan:#0099cc;--text:#1a1a3a;--dim:#8080b0; }
+    :root[data-theme="light"] p { color:#444466; }
+    :root[data-theme="light"] li { color:#444466; }
+    :root[data-theme="light"] td { color:#444466; border-color: rgba(0,0,0,.1); }
+    :root[data-theme="light"] th { border-color: rgba(0,0,0,.1); }
+    :root[data-theme="light"] .notice { background:rgba(91,45,224,.1); border-color:rgba(91,45,224,.3); color:#444466; }
+
     * { margin:0;padding:0;box-sizing:border-box; }
     body { font-family:'Noto Sans KR','Outfit',sans-serif;background:var(--bg);color:var(--text);line-height:1.8; }
     .wrap { max-width:800px;margin:0 auto;padding:3rem 1.5rem 5rem; }
@@ -35,6 +42,7 @@
     @media (max-width: 1150px) { .ad-sidebar { display:none !important; } }
   </style>
   <script src="security.js"></script>
+  <script src="theme.js"></script>
 </head>
 <body>
 <div class="wrap">
