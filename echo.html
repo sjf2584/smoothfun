@@ -200,7 +200,6 @@
     .ripple.fail { border-color:var(--red); }
     .ripple.success { border-color:var(--green); }
 
-
     .result-box { animation:fadeUp .4s ease; }
     @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
     .start-btn {
@@ -293,10 +292,6 @@
     .acc-chip .beat-num { font-size:.62rem; opacity:.6; }
     .acc-chip .beat-val { font-size:.9rem; }
 
-    
-    
-    
-    
     @media (max-width:1300px) {  }
 
     /* ── Leaderboard ── */
@@ -332,11 +327,7 @@
     .lb-name { flex:1; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:1rem; }
     .lb-score { font-family:monospace; font-size:.95rem; color:var(--cyan); font-weight:700; }
   
-    /* AdSense 사이드바 */
-    .ad-sidebar { position:fixed; top:120px; height:600px; width:160px; z-index:10; }
-    .ad-left  { left: calc(50% - 550px); }
-    .ad-right { right: calc(50% - 550px); }
-    @media (max-width: 1150px) { .ad-sidebar { display:none !important; } }
+     }
   </style>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1363977997493751" crossorigin="anonymous"></script>
   <script src="security.js"></script>
@@ -346,14 +337,6 @@
   <meta name="google-adsense-account" content="ca-pub-1363977997493751">
 </head>
 <body>
-<div class="ad-sidebar ad-left">
-  <ins class="adsbygoogle" style="display:block;width:160px;height:600px" data-ad-client="ca-pub-1363977997493751" data-ad-slot="XXXXXXXXXX"></ins>
-  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-</div>
-<div class="ad-sidebar ad-right">
-  <ins class="adsbygoogle" style="display:block;width:160px;height:600px" data-ad-client="ca-pub-1363977997493751" data-ad-slot="XXXXXXXXXX"></ins>
-  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-</div>
 
 <header>
   <a href="index.html" class="btn-home">← 홈으로</a>
@@ -429,7 +412,6 @@
 
   <div class="tol-disp">오차 허용 범위: ±100ms</div>
 </div>
-
 
 <div class="lb-section">
   <div class="lb-warning">⚠️ <b>정정당당한 승부!</b><br>클라이언트 변조를 통한 비정상적인 스코어 조작은 모든 참여자의 재미를 반감시킵니다. 양심적인 플레이를 부탁드립니다.</div>
@@ -771,8 +753,6 @@ document.addEventListener('keyup', e => {
   const keyEl = document.querySelector(`.key[data-key="${e.code}"]`);
   if (keyEl) keyEl.classList.remove('lit');
 });
-
-
 
 // ── Accuracy table html builder ──
 function buildAccuracyHTML(intervals, failed) {
